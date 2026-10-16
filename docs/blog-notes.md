@@ -58,6 +58,28 @@
 - **選択**：MPAndroidChart は既定でタップした点に十字線を出す（`isHighlightPerTapEnabled = false` で止めた）。
   Vico はマーカーを渡さなければ何も出ない。
 
+## 棒（グループ / 積み上げの切り替え、角丸）
+
+- **グループと積み上げの作り方**：
+  - MPAndroidChart：グループは系列ごとに `BarDataSet` を作り、`groupBars(fromX, groupSpace, barSpace)` で並べ直す。
+    積み上げは 1 つの `BarDataSet` に、値を配列（3.x）/ リスト（4.x）で持つ `BarEntry` を入れ、凡例の文字は `stackLabels` で付ける。
+    切り替えるとデータの形そのものが変わる
+  - Vico：データは同じ（系列 3 つ）で、`ColumnCartesianLayer` の `MergeMode`（`Grouped` / `Stacked`）を変えるだけ
+- **切り替えの反映**：
+  - 3.2.0：View は Compose の state を知らないので、`AndroidView` の `update` でモードの変化を見て、データと軸を差し替え、
+    `notifyDataSetChanged()` で目盛りを計算し直させる
+  - 4.0.1：`remember(mode)` で新しい `BarData` を作って渡すだけ。ただし軸の範囲を変えたら `update` で `notifyDataSetChanged()` が要る
+  - Vico：`MergeMode` と範囲を変えても、**データが前回と同じだと y の範囲が計算し直されず、積み上げが 0〜100 の範囲に描かれて上が切れた**。
+    y の範囲は transaction を流したときに計算されるため。表示方法を `ExtraStore` に入れて transaction を流し直すと直った
+    （データが同じだと、transaction を流し直すだけでは足りなかった）
+- **角丸**：
+  - 3.2.0：設定がない（角丸にするには `BarChartRenderer` を自作する）
+  - 4.0.1：`barCornerRadius`。グループでは 4 隅とも丸め、積み上げでは一番上の区画の上側だけを丸める
+  - Vico：棒の形を Compose の `Shape` で渡す。区画ごとに形を当てるので、そのままだと積み上げの途中の区画まで丸くなる。
+    4.0.1 に合わせ、表示方法と系列ごとに形を変えた
+- **太さと間隔**：複合グラフと同じく、MPAndroidChart は x の 1 区間に対する割合、Vico は dp。
+  1 区間を 64dp とみなして換算し、全体が収まる倍率に任せた。
+
 ## 計測メモ（途中の値）
 - release APK（R8 あり、複合グラフだけ実装した時点）：土台だけで約 978KB、そこからの増加は 3.2.0 が約 +50KB、4.0.1 が約 +65KB、Vico が約 +98KB。
   全部のグラフを実装してから測り直す。

@@ -17,7 +17,7 @@ enum class ChartScreen(
     Bar(
         route = "bar",
         title = "棒（グループ・積み上げ）",
-        description = "月別 × 3 製品の売上。角丸・グラデーション",
+        description = "上半期の月別 × 3 製品の売上。グループと積み上げを切り替え、棒の先端は角丸",
     ),
     Line(
         route = "line",

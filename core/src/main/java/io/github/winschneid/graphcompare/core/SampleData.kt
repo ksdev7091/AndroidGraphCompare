@@ -4,7 +4,10 @@ import kotlin.random.Random
 
 data class PieSlice(val label: String, val value: Float)
 
-data class MonthlySales(val month: Int, val productA: Float, val productB: Float, val productC: Float)
+data class MonthlySales(val month: Int, val productA: Float, val productB: Float, val productC: Float) {
+    /** 製品 A・B・C の順の値。積み上げでは下から A・B・C の順に重ねる。 */
+    val values: List<Float> get() = listOf(productA, productB, productC)
+}
 
 data class CombinedPoint(val month: Int, val sales: Float, val growthRatePercent: Float)
 

@@ -9,6 +9,7 @@ object ChartFormat {
     const val SALES_LABEL = "売上（左軸）"
     const val GROWTH_LABEL = "前年比（右軸）"
     val LINE_SERIES_LABELS = listOf("店舗A", "店舗B")
+    val PRODUCT_LABELS = listOf("製品A", "製品B", "製品C")
 
     private val integerFormat = NumberFormat.getIntegerInstance(Locale.JAPAN)
 
