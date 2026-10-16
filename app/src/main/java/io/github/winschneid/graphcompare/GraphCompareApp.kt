@@ -2,6 +2,7 @@ package io.github.winschneid.graphcompare
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -63,12 +64,15 @@ fun GraphCompareApp(initialScreen: ChartScreen?) {
                     .padding(16.dp),
             ) {
                 Text(selected.description, style = MaterialTheme.typography.bodyMedium)
-                FlavorChart(
-                    screen = selected,
+                // testTag は Compose の Box に付ける。AndroidView（MPAndroidChart の View）に直接付けると、
+                // 中の View のアクセシビリティ情報に隠れて UiAutomator から見つからない
+                Box(
                     modifier = Modifier
                         .padding(top = 16.dp)
                         .testTag(selected.testTag),
-                )
+                ) {
+                    FlavorChart(screen = selected)
+                }
             }
         }
     }

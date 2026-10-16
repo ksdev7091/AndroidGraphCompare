@@ -134,6 +134,13 @@
 | `UpdateAnimationBenchmark` | ボタンで 10 回差し替え、毎回アニメーションの終わりまで待つ | フレーム時間 |
 | `LazyListBenchmark` | LazyColumn を下へ 3 回フリック | フレーム時間 |
 
+### ベンチマークを書くときの注意
+- `AndroidView`（MPAndroidChart の View、4.0.1 の chart composable の中身も同じ）に直接付けた testTag は、
+  中の View のアクセシビリティ情報に隠れて UiAutomator から見つからなかった。Compose の `Box` で包んでそこに付ける。
+- `connectedAndroidTest` は終わるとアプリとテスト用 APK をアンインストールする。
+- 端末によっては（Xiaomi 系など）USB 経由のインストールのたびに端末側で承認が要る。承認されないと
+  `INSTALL_FAILED_USER_RESTRICTED` になるが、Gradle は BUILD SUCCESSFUL のまま終わるので、ログを確認する。
+
 ## 計測メモ（途中の値）
 - release APK（R8 あり、複合グラフだけ実装した時点）：土台だけで約 978KB、そこからの増加は 3.2.0 が約 +50KB、4.0.1 が約 +65KB、Vico が約 +98KB。
   全部のグラフを実装してから測り直す。
