@@ -7,11 +7,13 @@ import io.github.winschneid.graphcompare.combined.CombinedChartScreen
 import io.github.winschneid.graphcompare.core.ChartScreen
 import io.github.winschneid.graphcompare.core.ui.ChartPlaceholder
 import io.github.winschneid.graphcompare.line.LineChartScreen
+import io.github.winschneid.graphcompare.pie.PieChartScreen
 
 /** MPAndroidChart 3.2.0（View を AndroidView で包む） による実装。 */
 @Composable
 fun FlavorChart(screen: ChartScreen, modifier: Modifier = Modifier) {
     when (screen) {
+        ChartScreen.Pie -> PieChartScreen(modifier)
         ChartScreen.Bar -> BarChartScreen(modifier)
         ChartScreen.Line -> LineChartScreen(modifier)
         ChartScreen.Combined -> CombinedChartScreen(modifier)

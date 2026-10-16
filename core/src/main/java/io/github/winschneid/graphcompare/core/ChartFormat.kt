@@ -27,6 +27,14 @@ object ChartFormat {
 
     fun signedPercent(value: Float): String = String.format(Locale.JAPAN, "%+.1f%%", value)
 
+    /** 円グラフのスライスに描く文字。MPAndroidChart と同じく、割合の下に項目名を置く。 */
+    fun pieSliceText(slice: PieSlice, total: Float): String = "${percent(slice.value / total * 100f)}\n${slice.label}"
+
+    fun pieCenterText(total: Float): String = "合計\n${integer(total)}円"
+
+    fun pieSelectionText(slice: PieSlice, total: Float): String =
+        "${slice.label} ${integer(slice.value)}円（${percent(slice.value / total * 100f)}）"
+
     fun markerText(point: CombinedPoint): String =
         "${month(point.month - 1)}\n売上 ${sales(point.sales)}\n前年比 ${signedPercent(point.growthRatePercent)}"
 }

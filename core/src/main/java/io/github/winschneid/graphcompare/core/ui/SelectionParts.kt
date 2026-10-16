@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.winschneid.graphcompare.core.ChartFormat
 import io.github.winschneid.graphcompare.core.CombinedPoint
+import io.github.winschneid.graphcompare.core.PieSlice
 
 /**
  * Compose でマーカーを描ける実装（MPAndroidChart 4.x）が使うマーカー。
@@ -37,6 +38,20 @@ fun CombinedSelectionText(point: CombinedPoint?, modifier: Modifier = Modifier) 
             "棒か点をタップすると、その月の値を表示します"
         } else {
             "選択中: ${ChartFormat.markerText(point).replace("\n", "　")}"
+        },
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = modifier.padding(top = 12.dp),
+    )
+}
+
+/** 円グラフの下に出す選択中のスライス。 */
+@Composable
+fun PieSelectionText(slice: PieSlice?, total: Float, modifier: Modifier = Modifier) {
+    Text(
+        text = if (slice == null) {
+            "スライスをタップすると、その項目の値を表示します"
+        } else {
+            "選択中: ${ChartFormat.pieSelectionText(slice, total)}"
         },
         style = MaterialTheme.typography.bodyMedium,
         modifier = modifier.padding(top = 12.dp),
