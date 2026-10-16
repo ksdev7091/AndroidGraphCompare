@@ -39,6 +39,7 @@ import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesi
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
+import com.patrykandpatrick.vico.compose.cartesian.Zoom
 import com.patrykandpatrick.vico.compose.common.Fill
 import com.patrykandpatrick.vico.compose.common.Insets
 import com.patrykandpatrick.vico.compose.common.LegendItem
@@ -138,8 +139,9 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
                     verticalAxisPosition = Axis.Position.Vertical.End,
                 ),
                 startAxis = VerticalAxis.rememberStart(label = axisLabel, valueFormatter = SalesFormatter),
-                endAxis = VerticalAxis.rememberEnd(label = axisLabel, valueFormatter = PercentFormatter),
-                bottomAxis = HorizontalAxis.rememberBottom(label = axisLabel, valueFormatter = MonthFormatter),
+                // 既定では全部の軸が補助線を引くので、MPAndroidChart に合わせて左軸の横線だけ残す
+                endAxis = VerticalAxis.rememberEnd(label = axisLabel, valueFormatter = PercentFormatter, guideline = null),
+                bottomAxis = HorizontalAxis.rememberBottom(label = axisLabel, valueFormatter = MonthFormatter, guideline = null),
                 marker = marker,
                 markerVisibilityListener = markerListener,
                 // MPAndroidChart と同じく、タップでマーカーを出したままにする（既定は押している間だけ）
@@ -157,9 +159,11 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp),
-            // この画面ではタップの比較に絞るため、ズームとスクロールは止める
+            // この画面ではタップの比較に絞るため、ズームとスクロールは止める。
+            // Vico は棒の間隔が dp で決まり、既定では画面からはみ出した分をスクロールで見せるので、
+            // 全体が収まる倍率（Zoom.Content）を指定する
             scrollState = rememberVicoScrollState(scrollEnabled = false),
-            zoomState = rememberVicoZoomState(zoomEnabled = false),
+            zoomState = rememberVicoZoomState(zoomEnabled = false, initialZoom = Zoom.Content, minZoom = Zoom.Content),
         )
         CombinedSelectionText(selected)
     }
