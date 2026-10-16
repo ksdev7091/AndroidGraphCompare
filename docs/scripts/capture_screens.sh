@@ -8,12 +8,12 @@
 # 座標は 1200 × 2608 の端末（POCO 26077PC53G）に合わせている
 F=$1; T=$2; O=$3; mkdir -p $O
 ADB=~/Library/Android/sdk/platform-tools/adb
-P=io.github.winschneid.graphcompare.$F
+P=io.github.ksdev7091.graphcompare.$F
 TMP=$(mktemp -d)
 
 open_screen() {
     $ADB shell am force-stop $P
-    $ADB shell am start -W -n $P/io.github.winschneid.graphcompare.MainActivity --es theme $T ${1:+--es screen $1} >/dev/null
+    $ADB shell am start -W -n $P/io.github.ksdev7091.graphcompare.MainActivity --es theme $T ${1:+--es screen $1} >/dev/null
     sleep 2
 }
 

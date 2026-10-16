@@ -5,7 +5,7 @@ import os
 import re
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
-SRC = "app/src/{flavor}/java/io/github/winschneid/graphcompare/"
+SRC = "app/src/{flavor}/java/io/github/ksdev7091/graphcompare/"
 FLAVORS = [("mp3", "MPAndroidChart 3.2.0"), ("mp4", "MPAndroidChart 4.0.1"), ("vico", "Vico 3.3.1")]
 CHARTS = [
     ("円", ["pie/PieChartScreen.kt"]),

@@ -39,7 +39,7 @@ docs/       比較のメモ、計測結果、スクリーンショット、動�
 ```
 
 MPAndroidChart 3.x と 4.x はパッケージ名が同じで、1 つの APK に同居できません。そのため flavor ごとに依存を分け、
-applicationId も分けています（`io.github.winschneid.graphcompare.mp3` など）。3 つを同じ端末に並べてインストールできます。
+applicationId も分けています（`io.github.ksdev7091.graphcompare.mp3` など）。3 つを同じ端末に並べてインストールできます。
 
 ## ビルドと実行
 
@@ -57,7 +57,7 @@ MPAndroidChart は JitPack でのみ配布されているので、初回は JitP
 adb から画面やテーマを指定して直接開けます（ベンチマークと撮影で使っています）。
 
 ```bash
-adb shell am start -n io.github.winschneid.graphcompare.vico/io.github.winschneid.graphcompare.MainActivity --es screen combined --es theme dark
+adb shell am start -n io.github.ksdev7091.graphcompare.vico/io.github.ksdev7091.graphcompare.MainActivity --es screen combined --es theme dark
 ```
 
 | extra | 値 |

@@ -2,9 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <queries>
-        <package android:name="io.github.winschneid.graphcompare.mp3" />
-        <package android:name="io.github.winschneid.graphcompare.mp4" />
-        <package android:name="io.github.winschneid.graphcompare.vico" />
+        <package android:name="io.github.ksdev7091.graphcompare.mp3" />
+        <package android:name="io.github.ksdev7091.graphcompare.mp4" />
+        <package android:name="io.github.ksdev7091.graphcompare.vico" />
     </queries>
 
 </manifest>

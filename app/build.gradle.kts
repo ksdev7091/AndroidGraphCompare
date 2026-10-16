@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-val baseApplicationId = "io.github.winschneid.graphcompare"
+val baseApplicationId = "io.github.ksdev7091.graphcompare"
 
 android {
     namespace = baseApplicationId

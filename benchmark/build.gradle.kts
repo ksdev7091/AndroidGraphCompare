@@ -2,10 +2,10 @@ plugins {
     alias(libs.plugins.android.test)
 }
 
-val targetApplicationId = "io.github.winschneid.graphcompare"
+val targetApplicationId = "io.github.ksdev7091.graphcompare"
 
 android {
-    namespace = "io.github.winschneid.graphcompare.benchmark"
+    namespace = "io.github.ksdev7091.graphcompare.benchmark"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {

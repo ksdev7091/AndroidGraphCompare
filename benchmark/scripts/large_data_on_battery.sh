@@ -15,7 +15,7 @@ ITERATIONS=5
 TARGET_TEMP=350      # 35.0℃（dumpsys battery の値は 0.1℃ 単位）
 MAX_WAIT_STEPS=48    # 10 秒 × 48 = 最大 8 分待つ（画面が消える 10 分より短くする）
 
-APP=io.github.winschneid.graphcompare
+APP=io.github.ksdev7091.graphcompare
 TEST_PKG=$APP.benchmark
 MEDIA=/sdcard/Android/media/$TEST_PKG
 OUT=/data/local/tmp/largedata

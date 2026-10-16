@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "io.github.winschneid.graphcompare.core"
+    namespace = "io.github.ksdev7091.graphcompare.core"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
