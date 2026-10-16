@@ -19,6 +19,10 @@ object ChartColors {
         Color(0xFFD64560),
         Color(0xFF8A5CD6),
     )
+
+    // 3.x の MarkerView は XML なので、app/src/mp3/res/drawable/marker_background.xml にも同じ値を書いている
+    val markerBackground = Color(0xE6303030)
+    val markerText = Color.White
 }
 
 // 端末ごとに色が変わらないよう dynamic color は使わない

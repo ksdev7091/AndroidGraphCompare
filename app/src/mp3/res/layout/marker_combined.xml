@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MPAndroidChart 3.x の MarkerView は XML レイアウトを inflate して描く -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/marker_label"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/marker_background"
+    android:lineSpacingExtra="2sp"
+    android:paddingHorizontal="10dp"
+    android:paddingVertical="6dp"
+    android:textColor="#FFFFFFFF"
+    android:textSize="12sp" />
