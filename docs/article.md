@@ -13,6 +13,7 @@ Android のグラフライブラリといえば長く MPAndroidChart が定番�
 
 「Compose で作るなら、4.0 と Vico のどちらがいいのか？」「3.x から上げるならどっちに行くべきか？」が気になったので、**同じグラフを 3 つの書き方で実装し、コード・見た目・性能を比べてみました**。
 今回はその結果と、比べる過程でハマったところをまとめました。
+以降、MPAndroidChart 3.2.0 を **MP3**、4.0.1 を **MP4** と書きます（サンプルアプリの flavor 名と同じです）。
 
 :::message
 ⚠️ 注意事項
@@ -36,12 +37,12 @@ https://github.com/winschneid/AndroidGraphCompare
 
 | こんなとき | おすすめ |
 |---|---|
-| View の 3.x を使っている | **4.0.1 に上げる**。書き換えはプロパティ名が中心で、大量データなら間引きで速くなる |
+| View の 3.x を使っている | **MP4 に上げる**。書き換えはプロパティ名が中心で、大量データなら間引きで速くなる |
 | Compose で新しく作る・グラフは折れ線と棒が中心 | **Vico**。Compose らしく書け、アニメーションも自然。ただし大量データでは遅延が多かった |
-| Compose で新しく作る・レーダーや散布図も使う、大量データを扱う | **4.0.1**。中身は View だが、chart composable と Composable のマーカーで Compose から十分使いやすい |
+| Compose で新しく作る・レーダーや散布図も使う、大量データを扱う | **MP4**。中身は View だが、chart composable と Composable のマーカーで Compose から十分使いやすい |
 | Kotlin Multiplatform で共有したい | **Vico** |
 
-「Compose ネイティブだから Vico」と選びたくなるところですが、実際に揃えて比べてみると、**4.0.1 は「中身は View」という点を除けば、Compose からも十分使いやすく、機能も性能も強い**という結果になりました。
+「Compose ネイティブだから Vico」と選びたくなるところですが、実際に揃えて比べてみると、**MP4 は「中身は View」という点を除けば、Compose からも十分使いやすく、機能も性能も強い**という結果になりました。
 
 以降では、何をどう比べたのか、どこでハマったのかを詳しく解説します。
 
@@ -49,11 +50,11 @@ https://github.com/winschneid/AndroidGraphCompare
 
 ### 3 つの実装
 
-| | ライブラリ | 書き方 |
+| 略称 | ライブラリ | 書き方 |
 |---|---|---|
-| A | MPAndroidChart 3.2.0 | View を `AndroidView` で包む |
-| B | MPAndroidChart 4.0.1 + MPChartCompose | 4.x の chart composable |
-| C | Vico 3.3.1 | Compose |
+| MP3 | MPAndroidChart 3.2.0 | View を `AndroidView` で包む |
+| MP4 | MPAndroidChart 4.0.1 + MPChartCompose | 4.x の chart composable |
+| Vico | Vico 3.3.1 | Compose |
 
 ### 作ったグラフ
 
@@ -92,7 +93,7 @@ dependencies {
 
 ### 導入まわり
 
-| | 3.2.0 | 4.0.1 | Vico 3.3.1 |
+| | MP3 | MP4 | Vico |
 |---|---|---|---|
 | 配布 | JitPack | JitPack | Maven Central |
 | minSdk | 14 | 23 | （今回は 24 で統一） |
@@ -126,7 +127,7 @@ APK サイズの差は 60KB ほどで、選ぶ決め手になるほどではあ�
 | 描画領域の左右の端 | y 軸の幅を `minWidth` / `maxWidth` で固定 | `BaseAxis.Size.Fixed` で固定 |
 | 凡例 | 既定で出る。描画領域の左端から並ぶ | 自分で並べる。Canvas の左端から並ぶので、y 軸の幅だけずらす |
 
-| 3.2.0 | 4.0.1 | Vico |
+| MP3 | MP4 | Vico |
 |---|---|---|
 | ![](images/combined-mp3-light.png) | ![](images/combined-mp4-light.png) | ![](images/combined-vico-light.png) |
 
@@ -137,7 +138,7 @@ APK サイズの差は 60KB ほどで、選ぶ決め手になるほどではあ�
 MPAndroidChart は棒の太さを「x の 1 区間に対する割合」（`barWidth = 0.6`）で指定しますが、Vico は「太さと間隔を dp」で指定します。
 そこで比率から dp に換算したのですが、それでも細いまま。スクリーンショットの画素を数えてみると、差ははっきりしていました。
 
-| 3.2.0 / 4.0.1 | Vico（調整前） | Vico（調整後） |
+| MP3 / MP4 | Vico（調整前） | Vico（調整後） |
 |---|---|---|
 | 棒 42px、間隔 72px（0.58） | 棒 32px、間隔 70px（0.45） | 棒 42px、間隔 70px（0.60） |
 
@@ -155,14 +156,14 @@ Vico のソースを追ってみると、原因は 2 つありました。
 
 | | マーカー | 選択状態 |
 |---|---|---|
-| 3.2.0 | XML レイアウト + `MarkerView` を継承 | `OnChartValueSelectedListener` から Compose の state に書き戻す |
-| 4.0.1 | **Composable** で書ける | `ChartState.selectedEntry` を読むだけ |
+| MP3 | XML レイアウト + `MarkerView` を継承 | `OnChartValueSelectedListener` から Compose の state に書き戻す |
+| MP4 | **Composable** で書ける | `ChartState.selectedEntry` を読むだけ |
 | Vico | Canvas に描く `TextComponent`（Composable は置けない） | `CartesianMarkerVisibilityListener` |
 
-4.0.1 では、マーカーも選択状態も Compose の中で完結します。
+MP4 では、マーカーも選択状態も Compose の中で完結します。
 
 ```kotlin
-// 4.0.1：マーカーも選択状態も Compose の中で完結する
+// MP4：マーカーも選択状態も Compose の中で完結する
 val state = rememberChartState()
 CombinedChart(
     data = data,
@@ -175,14 +176,69 @@ Text("選択中: ${(state.selectedEntry?.data as? CombinedPoint)?.let(ChartForma
 
 ほかにも細かな違いがありました。
 
-- 4.0.1 の `Entry` は型付きの payload（`Entry<CombinedPoint>`）を持てる。3.2.0 も `data` に入れられるが `Object` なのでキャストが必要。Vico は数値しか渡せないので、x 座標から元のデータを引き直した
-- MPAndroidChart はタップするとマーカーが出たままになるが、Vico の既定は「押している間だけ」。`CartesianMarkerController.rememberToggleOnTap()` で揃えた
+- MP4 の `Entry` は型付きの payload（`Entry<CombinedPoint>`）を持てる。MP3 も `data` に入れられるが `Object` なのでキャストが必要。Vico は数値しか渡せないので、x 座標から元のデータを引き直した
+- MPAndroidChart はタップするとマーカーが出たままになるが、Vico の既定は「押している間だけ」
+
+### なぞったときの動き
+
+マーカーを出したまま指をずらすとどう動くかも確かめました。`adb shell input motionevent` で「4 月の棒に指を置く → 置いたまま 7 月、10 月へずらす → 離す」を 1 段階ずつ送り、そのつどスクリーンショットを撮っています。
+
+最初は 3 つともばらばらでした。
+
+| | 指を置いた瞬間 | なぞっている間 | 離したあと |
+|---|---|---|---|
+| MP3 | 出ない | ❌ 出ない | 出ない |
+| MP4 | 出ない | ✅ 指に合わせて動く | 出たまま |
+| Vico | 出ない | ❌ 出ない | 出ない |
+
+MP4 が一番自然です。MP3 と Vico が動かなかったのは、比較のために入れた設定が原因でした。
+
+- **MP3**：ドラッグと拡大縮小を両方無効にすると、タッチの移動をまるごと無視する作りでした（`BarLineChartTouchListener`）。「なぞってハイライト」も、ドラッグが有効なときの分岐の中にしかありません。拡大縮小は無効のまま `isDragEnabled = true` にすると、全体表示から動かずに、なぞると追従するようになりました
+- **MP4**：ドラッグを無効にしていても、なぞると追従します。書き直しで変わったところなので、3.x から上げると動きが変わります
+- **Vico**：タップで出したままにするために使っていた `rememberToggleOnTap()` はタップにしか反応せず、既定の `rememberShowOnPress()` はなぞると追従するものの離すと消えます。MP4 と同じ動きにするには、`CartesianMarkerController` を自作する必要がありました
+
+```kotlin
+// Vico：なぞると追従し、離しても残り、同じ場所をもう一度タップすると消える
+private class FollowAndStayMarkerController : CartesianMarkerController {
+    private var isPressed = false
+    private var shownTargets: List<CartesianMarker.Target>? = null
+    // 指のタップにはわずかななぞりが混じるので、消すかどうかは押した瞬間の表示と比べて決める
+    private var shownTargetsAtPress: List<CartesianMarker.Target>? = null
+
+    override val acceptsLongPress = false
+    override val consumeMoveEvents = true // スクロールを止めているので、なぞる動きはマーカーで受け取る
+
+    override fun shouldAcceptInteraction(interaction: Interaction, targets: List<CartesianMarker.Target>) =
+        when (interaction) {
+            is Interaction.Press -> { isPressed = true; shownTargetsAtPress = shownTargets; false }
+            is Interaction.Release -> { isPressed = false; false }
+            is Interaction.Move -> isPressed && targets.isNotEmpty()
+            is Interaction.Tap -> targets.isNotEmpty()
+            else -> false
+        }
+
+    override fun shouldShowMarker(interaction: Interaction, targets: List<CartesianMarker.Target>): Boolean {
+        val show = interaction is Interaction.Move || targets != shownTargetsAtPress
+        shownTargets = if (show) targets else null
+        return show
+    }
+}
+```
+
+揃えたあと、10 月の棒の上までなぞったところです。
+
+| MP3 | MP4 | Vico |
+|---|---|---|
+| ![](images/combined-drag-mp3-light.png) | ![](images/combined-drag-mp4-light.png) | ![](images/combined-drag-vico-light.png) |
+
+よく見ると、**MP3 だけ棒ではなく折れ線の点が選ばれています**（棒が濃くならず、オレンジの縦線が出ている）。指の位置は 10 月の棒の内側ですが、折れ線の点のすぐ近くでした。
+これは「複合グラフで棒の中をタップしても、近くの折れ線の点が選ばれる」問題で、MP4（4.0.1）のリリースノートで修正されたもの（#5207）です。表示される値は同じ 10 月のものなので気づきにくいですが、こうして並べると違いがわかります。
 
 ## 3. グラフ別に見えた違い
 
 ### 円グラフ：Vico には「ない」機能を自前で
 
-| 3.2.0 | 4.0.1 | Vico |
+| MP3 | MP4 | Vico |
 |---|---|---|
 | ![](images/pie-mp3-light.png) | ![](images/pie-mp4-light.png) | ![](images/pie-vico-light.png) |
 
@@ -197,18 +253,18 @@ Compose なので重ねるのは簡単ですが、タップの判定まで自前
 さらに実機で動かしてみると、**スライスを選ぶたびに円全体が縮む**ことに気づきました。
 MPAndroidChart は最初から「ずらす量」の分だけ円を小さくしておくので大きさは変わりませんが、Vico は「指定した半径 − 一番大きいずらし量」で描くためです。選択中だけ直径を大きく指定して揃えました。
 
-なお、選択時にずらす量の既定値は 3.2.0 が 18（px のまま）、4.0.1 が 9dp と、ここも違います。
+なお、選択時にずらす量の既定値は MP3 が 18（px のまま）、MP4 が 9dp と、ここも違います。
 
 ### 棒グラフ：切り替えたら積み上げが崩れた
 
-| 3.2.0 | 4.0.1 | Vico |
+| MP3 | MP4 | Vico |
 |---|---|---|
 | ![](images/bar-stacked-mp3-light.png) | ![](images/bar-stacked-mp4-light.png) | ![](images/bar-stacked-vico-light.png) |
 
 グループ表示と積み上げ表示をボタンで切り替えられるようにしました。
 
 - **データの持ち方**：MPAndroidChart は、グループなら系列ごとに `BarDataSet` を作って `groupBars`、積み上げなら値を配列で持つ `BarEntry` 1 つ、と**表示方法でデータの形が変わります**。Vico はデータはそのままで、`MergeMode`（`Grouped` / `Stacked`）を変えるだけです
-- **角丸**：3.2.0 には設定がありません。4.0.1 は `barCornerRadius` で、グループは 4 隅、積み上げは一番上の区画の上側だけを丸めます。Vico は Compose の `Shape` で渡しますが、区画ごとに当てるので、そのままだと途中の区画まで丸くなります
+- **角丸**：MP3 には設定がありません。MP4 は `barCornerRadius` で、グループは 4 隅、積み上げは一番上の区画の上側だけを丸めます。Vico は Compose の `Shape` で渡しますが、区画ごとに当てるので、そのままだと途中の区画まで丸くなります
 
 そして Vico でハマったのが切り替えです。積み上げに切り替えると、**y 軸が 0〜100 のまま（本来は 0〜240）で、棒の上が切れてしまいました**。
 
@@ -217,7 +273,7 @@ MPAndroidChart は最初から「ずらす量」の分だけ円を小さくし�
 
 ### 折れ線：曲線の「なめらかさ」が違う
 
-| 3.2.0 | 4.0.1 | Vico |
+| MP3 | MP4 | Vico |
 |---|---|---|
 | ![](images/line-mp3-light.png) | ![](images/line-mp4-light.png) | ![](images/line-vico-light.png) |
 
@@ -227,28 +283,28 @@ MPAndroidChart は最初から「ずらす量」の分だけ円を小さくし�
 
 ### ダークテーマ
 
-| 3.2.0 | 4.0.1 | Vico |
+| MP3 | MP4 | Vico |
 |---|---|---|
 | ![](images/combined-mp3-dark.png) | ![](images/combined-mp4-dark.png) | ![](images/combined-vico-dark.png) |
 
-MPAndroidChart は中身が View なので、Compose の `MaterialTheme` の色は自動では反映されません。文字や補助線の色を `update` で塗り直しています（4.0.1 も同じ）。
+MPAndroidChart は中身が View なので、Compose の `MaterialTheme` の色は自動では反映されません。文字や補助線の色を `update` で塗り直しています（MP4 も同じ）。
 Vico は Compose の色をそのまま渡せます。
 
-### データ更新アニメーション：3.2.0 は「伸び直す」
+### データ更新アニメーション：MP3 は「伸び直す」
 
-動画：[3.2.0](videos/animation-mp3.mp4) / [4.0.1](videos/animation-mp4.mp4) / [Vico](videos/animation-vico.mp4)
+動画：[MP3](videos/animation-mp3.mp4) / [MP4](videos/animation-mp4.mp4) / [Vico](videos/animation-vico.mp4)
 
 | | 前の値から新しい値へ動かせるか | 書き方 |
 |---|---|---|
-| 3.2.0 | ❌ | 差し替えたあと `animateY` で 0 から伸ばし直す |
-| 4.0.1 | ✅ | chart composable に `animateChanges = true`（300ms 固定）。View なら `animateDataChange(data, ms)` |
+| MP3 | ❌ | 差し替えたあと `animateY` で 0 から伸ばし直す |
+| MP4 | ✅ | chart composable に `animateChanges = true`（300ms 固定）。View なら `animateDataChange(data, ms)` |
 | Vico | ✅ | ModelProducer に新しいデータを流すだけ。`animationSpec` で時間と動き方を変えられる |
 
-3.2.0 の「0 から伸び直す」動きでは、どこがどれだけ変わったのかが追えません。4.0 で一番うれしい変化の 1 つだと思います。
+MP3 の「0 から伸び直す」動きでは、どこがどれだけ変わったのかが追えません。MP4 で一番うれしい変化の 1 つだと思います。
 
 ### LazyColumn
 
-- MPAndroidChart は 3.2.0 も 4.0.1 も、行ごとに View を作ります（4.0.1 の chart composable も中身は `AndroidView`）。チャートがタッチを奪わないよう `isTouchEnabled = false` にしました
+- MP3 も MP4 も、行ごとに View を作ります（MP4 の chart composable も中身は `AndroidView`）。チャートがタッチを奪わないよう `isTouchEnabled = false` にしました
 - Vico は Compose で描くので View は作りません。データを更新しないなら、ModelProducer を使わずに `CartesianChartModel` を直接渡せます
 
 ## 4. 性能を測る
@@ -270,7 +326,7 @@ Macrobenchmark で、release 相当のビルドを実機（POCO 26077PC53G、And
 - 各計測の前に、電池の温度が 35℃ に下がるまで待つ
 - 4 つの条件を 3 周交互に回し、各 15 回
 
-| | 3.2.0 | 4.0.1 | 4.0.1 + 間引き | Vico 3.3.1 |
+| | MP3 | MP4 | MP4 + 間引き | Vico |
 |---|---:|---:|---:|---:|
 | フレームの CPU 時間 P50（ms） | 6.5 | 6.0 | 6.0 | 8.4 |
 | フレームの CPU 時間 P99（ms） | 16.8 | 16.8 | 10.4 | 30.4 |
@@ -278,13 +334,13 @@ Macrobenchmark で、release 相当のビルドを実機（POCO 26077PC53G、And
 | **遅延したフレームの割合** | 2.7% | 2.7% | **0.4%** | **24.5%** |
 
 - Vico は **4 フレームに 1 フレームが遅延**しました。3 周とも 23〜27% で安定していて、偶然ではありません
-- 既定の設定では、3.2.0 と 4.0.1 に差はありませんでした
-- 4.0.1 で**間引き（`isDecimationEnabled = true`）を on** にすると、遅延したフレームが 0.4% まで減りました 🎉
+- 既定の設定では、MP3 と MP4 に差はありませんでした
+- MP4 で**間引き（`isDecimationEnabled = true`）を on** にすると、遅延したフレームが 0.4% まで減りました 🎉
   同じ画素の列に重なる点を間引く機能なので、10,000 点を 300dp ほどの幅に描くこのケースでは、見た目はほぼ変わりません
 
 ### データ更新アニメーションと LazyColumn
 
-| | 3.2.0 | 4.0.1 | Vico |
+| | MP3 | MP4 | Vico |
 |---|---:|---:|---:|
 | データ更新：遅延したフレームの割合 | 0.1% | 0.1% | 1.6% |
 | LazyColumn：遅延したフレームの割合 | 0.5% | 0.3% | 0.2% |
@@ -309,28 +365,29 @@ Vico はデータ更新のフレームの CPU 時間が MPAndroidChart の約 2 
 
 空行・コメント・import を除いたコードの行数です。
 
-| | 3.2.0 | 4.0.1 | Vico |
+| | MP3 | MP4 | Vico |
 |---|---:|---:|---:|
 | 円 | 49 | 42 | 76 |
 | 棒 | 64 | 63 | 86 |
 | 折れ線 | 49 | 50 | 58 |
-| 複合 | 86 | 69 | 121 |
+| 複合 | 87 | 69 | 148 |
 | 大量データ / データ更新 / LazyColumn | 139 | 130 | 162 |
 | 共通のスタイル | 48 | 49 | 39 |
 | XML（マーカー） | 14 | - | - |
-| **合計** | **449** | **403** | **542** |
+| **合計** | **450** | **403** | **569** |
 
-4.0.1 が一番短く書けました。Vico が長いのは、見た目を MPAndroidChart に揃えるためのコード（凡例を並べる、余白を dp で合わせる、円グラフのタップ判定）が多いためです。Vico の既定の見た目で良ければ、もっと短くなります。
+MP4 が一番短く書けました。Vico が長いのは、見た目や動きを MPAndroidChart に揃えるためのコード（凡例を並べる、余白を dp で合わせる、円グラフのタップ判定、なぞったときのマーカーの制御）が多いためです。Vico の既定の見た目で良ければ、もっと短くなります。
 
 ### 機能対応表
 
-| | 3.2.0 | 4.0.1 | Vico 3.3.1 |
+| | MP3 | MP4 | Vico |
 |---|:---:|:---:|:---:|
 | 折れ線・棒・複合・ローソク足・円 | ✅ | ✅ | ✅ |
 | 横棒・散布図・バブル・レーダー | ✅ | ✅ | ❌ |
 | 円の中央の文字・タップでの強調 | ✅ | ✅ | ❌（自前） |
 | 棒の角丸 | ❌ | ✅ | ✅（Shape） |
 | マーカー | View + XML | Composable | TextComponent |
+| なぞってマーカーを動かす | ✅（ドラッグが有効なとき） | ✅ | 🔺（離すと消える。残すなら自作） |
 | 凡例 | 自動 | 自動 | 手動 |
 | 前の値からのアニメーション | ❌ | ✅ | ✅ |
 | 大量データの間引き | ❌ | ✅ | ❌ |
@@ -338,18 +395,18 @@ Vico はデータ更新のフレームの CPU 時間が MPAndroidChart の約 2 
 | Compose での使い方 | AndroidView で包む | chart composable（中身は View） | ネイティブ |
 | Kotlin Multiplatform | ❌ | ❌ | ✅ |
 
-## 6. 3.2.0 → 4.0.1 の移行
+## 6. MP3 → MP4（3.2.0 → 4.0.1）の移行
 
 パッケージ名もクラス名も同じなので、import はほぼそのまま使えます。主な書き換えは **getter / setter から Kotlin のプロパティへ**です。
 
 ```kotlin
-// 3.2.0
+// MP3（3.2.0）
 xAxis.setDrawGridLines(false)
 dataSet.setDrawValues(false)
 axisLeft.setLabelCount(5, true)
 dataSet.setCircleColor(color)
 
-// 4.0.1
+// MP4（4.0.1）
 xAxis.isDrawGridLinesEnabled = false
 dataSet.isDrawValuesEnabled = false
 axisLeft.labelCount = 5; axisLeft.isForceLabelsEnabled = true
@@ -358,10 +415,11 @@ dataSet.circleColor = color
 
 - 配列の引数はリストになった（`drawOrder`、`stackLabels`、積み上げの `BarEntry`）
 - `Entry` が型付きの payload を持てるようになった（`Entry(x, y, data = point)`）
+- **触ったときの動きが変わる**ものがある：ドラッグを無効にしていても、なぞるとマーカーが動く。複合グラフで棒の中をタップすると、近くの折れ線の点ではなく棒が選ばれる
 - **既定値が変わって見た目が変わる**ものがある：軸線と補助線の太さ（1dp → 0.5dp）、円グラフの選択時にずらす量（18px → 9dp）
 - Compose で使うなら、`AndroidView` の `factory` / `update` を chart composable の `setup` / `update` に移すだけで、設定の中身はほぼそのまま使える
 
-なお、3.1.0 の `ValueFormatter` を使っていた場合は、3.2.0 の時点で 3.0.x の `IAxisValueFormatter` に戻っています。4.0.1 も同じ書き方です。
+なお、3.1.0 の `ValueFormatter` を使っていた場合は、3.2.0 の時点で 3.0.x の `IAxisValueFormatter` に戻っています。MP4 も同じ書き方です。
 
 ## 7. 学んだこと
 
@@ -378,13 +436,13 @@ Vico も MPAndroidChart もソースが公開されているので、該当箇�
 ### 3. 性能は条件を揃えて、繰り返して測る
 
 1 回目の計測だけで「Vico は遅い」と書くこともできましたが、充電中・温度ばらばらの結果では説得力がありません。
-電池駆動・温度を揃えて・交互に回して測り直したことで、**差が偶然ではないこと**と、**4.0.1 の間引きがこれほど効くこと**の両方がはっきりしました。
+電池駆動・温度を揃えて・交互に回して測り直したことで、**差が偶然ではないこと**と、**MP4 の間引きがこれほど効くこと**の両方がはっきりしました。
 
 ## おわりに
 
 Compose の時代になって、グラフライブラリの選択肢は「MPAndroidChart 一択」ではなくなりました。
 
-- 📈 3.x を使っているなら、**4.0.1 への移行はかなり素直**。大量データなら間引きも効く
+- 📈 3.x を使っているなら、**MP4 への移行はかなり素直**。大量データなら間引きも効く
 - 🧩 Compose で書くなら、**Vico は書き味が良い**が、見た目を作り込むほどコードが増え、大量データには課題がある
 - ⚖️ 「Compose ネイティブかどうか」だけで選ばず、**必要なグラフの種類とデータ量**で選ぶのがよさそう
 

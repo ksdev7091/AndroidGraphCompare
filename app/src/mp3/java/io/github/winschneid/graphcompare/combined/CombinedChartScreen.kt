@@ -70,6 +70,9 @@ private fun createCombinedChart(
     onSelect: (CombinedPoint?) -> Unit,
 ): CombinedChart = CombinedChart(context).apply {
     applyChartSpec()
+    // 3.x は「なぞってハイライト」をドラッグが有効なときにしか行わない（ドラッグも拡大縮小も無効だと移動を無視する）。
+    // 拡大縮小は無効のままなので全体表示から動かず、なぞるとマーカーが指に合わせて動くようになる（4.x と同じ動き）
+    isDragEnabled = true
     drawOrder = arrayOf(CombinedChart.DrawOrder.BAR, CombinedChart.DrawOrder.LINE)
 
     xAxis.apply {

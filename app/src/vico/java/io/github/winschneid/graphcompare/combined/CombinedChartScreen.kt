@@ -32,6 +32,7 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarker
 import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarkerController
+import com.patrykandpatrick.vico.compose.cartesian.marker.Interaction
 import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarkerVisibilityListener
 import com.patrykandpatrick.vico.compose.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesianMarker
@@ -185,8 +186,8 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
                 ),
                 marker = marker,
                 markerVisibilityListener = markerListener,
-                // MPAndroidChart と同じく、タップでマーカーを出したままにする（既定は押している間だけ）
-                markerController = CartesianMarkerController.rememberToggleOnTap(),
+                // MPAndroidChart と同じ動きにする。既定（押している間だけ表示）も rememberToggleOnTap（タップだけに反応）も違うので自作する
+                markerController = remember { FollowAndStayMarkerController() },
                 layerPadding = { LayerPadding },
                 // 並び順も MPAndroidChart（CombinedData の既定で 折れ線 → 棒）に合わせる
                 legend = rememberChartLegend(
@@ -205,3 +206,45 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
 }
 
 private fun List<CombinedPoint>.pointAt(x: Double): CombinedPoint? = getOrNull(x.roundToInt())
+
+/**
+ * MPAndroidChart と同じ動きにするマーカーの表示制御。
+ * - タップで表示し、同じ場所をもう一度タップすると消す（rememberToggleOnTap と同じ）
+ * - 押したままなぞると、指の位置に合わせて動く（rememberToggleOnTap はタップにしか反応しない）
+ * - 指を離しても表示したまま（rememberShowOnPress は離すと消える）
+ */
+private class FollowAndStayMarkerController : CartesianMarkerController {
+    private var isPressed = false
+    private var shownTargets: List<CartesianMarker.Target>? = null
+
+    // タップで消すかどうかは、押した瞬間に表示していたものと比べて決める。
+    // 指のタップにはわずかななぞりが混じり、なぞりで表示した直後のタップで消えてしまうのを防ぐため
+    private var shownTargetsAtPress: List<CartesianMarker.Target>? = null
+
+    override val acceptsLongPress = false
+
+    // スクロールを止めているので、なぞる動きはマーカーで受け取る
+    override val consumeMoveEvents = true
+
+    override fun shouldAcceptInteraction(interaction: Interaction, targets: List<CartesianMarker.Target>): Boolean =
+        when (interaction) {
+            is Interaction.Press -> {
+                isPressed = true
+                shownTargetsAtPress = shownTargets
+                false
+            }
+            is Interaction.Release -> {
+                isPressed = false
+                false
+            }
+            is Interaction.Move -> isPressed && targets.isNotEmpty()
+            is Interaction.Tap -> targets.isNotEmpty()
+            else -> false
+        }
+
+    override fun shouldShowMarker(interaction: Interaction, targets: List<CartesianMarker.Target>): Boolean {
+        val show = interaction is Interaction.Move || targets != shownTargetsAtPress
+        shownTargets = if (show) targets else null
+        return show
+    }
+}
