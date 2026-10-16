@@ -1,5 +1,6 @@
 package io.github.winschneid.graphcompare.benchmark
 
+import android.content.Intent
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiObject2
@@ -8,9 +9,12 @@ import io.github.winschneid.graphcompare.core.ChartScreen
 
 private const val WAIT_TIMEOUT_MS = 5_000L
 
-/** [screen] を Intent extra で直接開き、グラフが表示されるまで待つ。 */
-fun MacrobenchmarkScope.openScreen(screen: ChartScreen) {
-    startActivityAndWait { intent -> intent.putExtra(ChartScreen.EXTRA_SCREEN, screen.route) }
+/** [screen] を Intent extra で直接開き、グラフが表示されるまで待つ。[extras] で計測用の extra を足せる。 */
+fun MacrobenchmarkScope.openScreen(screen: ChartScreen, extras: (Intent) -> Unit = {}) {
+    startActivityAndWait { intent ->
+        intent.putExtra(ChartScreen.EXTRA_SCREEN, screen.route)
+        extras(intent)
+    }
     waitForObject(screen.testTag)
 }
 

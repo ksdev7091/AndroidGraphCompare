@@ -18,11 +18,12 @@ import io.github.winschneid.graphcompare.common.applyRange
 import io.github.winschneid.graphcompare.common.applyThemeColors
 import io.github.winschneid.graphcompare.core.ChartFormat
 import io.github.winschneid.graphcompare.core.LargeDataSpec
+import io.github.winschneid.graphcompare.core.LocalChartOptions
 import io.github.winschneid.graphcompare.core.ui.ChartColors
 
 /**
  * MPAndroidChart 4.0.1 で 10,000 点の折れ線を描き、x 方向のピンチズームとドラッグを有効にする。
- * 4.x の間引き（isDecimationEnabled）は既定の off のまま比べる。
+ * 4.x の間引き（isDecimationEnabled）は既定の off。ベンチマークから on にした場合も測れるようにしている。
  */
 @Composable
 fun LargeDataScreen(modifier: Modifier = Modifier) {
@@ -37,6 +38,7 @@ fun LargeDataScreen(modifier: Modifier = Modifier) {
             },
         )
     }
+    val decimationEnabled = LocalChartOptions.current.decimationEnabled
     val textColor = MaterialTheme.colorScheme.onSurface.toArgb()
     val gridColor = MaterialTheme.colorScheme.outlineVariant.toArgb()
 
@@ -54,6 +56,7 @@ fun LargeDataScreen(modifier: Modifier = Modifier) {
             isScaleYEnabled = false
             isHighlightPerTapEnabled = false
             isHighlightPerDragEnabled = false
+            isDecimationEnabled = decimationEnabled
             axisRight.isEnabled = false
             legend.isEnabled = false
 

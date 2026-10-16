@@ -5,6 +5,7 @@ import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.uiautomator.Direction
+import io.github.winschneid.graphcompare.core.ChartOptions
 import io.github.winschneid.graphcompare.core.ChartScreen
 import io.github.winschneid.graphcompare.core.UpdateAnimationSpec
 import org.junit.Rule
@@ -23,8 +24,10 @@ class LargeDataBenchmark {
     fun zoomAndScroll() = rule.measureRepeated(
         packageName = targetAppId,
         metrics = listOf(FrameTimingMetric()),
-        iterations = ITERATIONS,
-        setupBlock = { openScreen(ChartScreen.LargeData) },
+        iterations = largeDataIterations,
+        setupBlock = {
+            openScreen(ChartScreen.LargeData) { it.putExtra(ChartOptions.EXTRA_DECIMATION, decimationEnabled) }
+        },
     ) {
         val chart = waitForObject(ChartScreen.LargeData.testTag)
         chart.pinchOpen(0.8f)
