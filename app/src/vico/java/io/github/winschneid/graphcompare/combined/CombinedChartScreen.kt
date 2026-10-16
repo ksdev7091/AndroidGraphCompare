@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.Axis
+import com.patrykandpatrick.vico.compose.cartesian.axis.BaseAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
@@ -28,6 +29,7 @@ import com.patrykandpatrick.vico.compose.cartesian.data.CartesianLayerRangeProvi
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.compose.cartesian.data.columnModel
 import com.patrykandpatrick.vico.compose.cartesian.data.lineModel
+import com.patrykandpatrick.vico.compose.cartesian.layer.CartesianLayerPadding
 import com.patrykandpatrick.vico.compose.cartesian.layer.ColumnCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
@@ -51,7 +53,7 @@ import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import com.patrykandpatrick.vico.compose.common.rememberHorizontalLegend
 import io.github.winschneid.graphcompare.core.ChartFormat
-import io.github.winschneid.graphcompare.core.CombinedAxisSpec
+import io.github.winschneid.graphcompare.core.CombinedChartSpec
 import io.github.winschneid.graphcompare.core.CombinedPoint
 import io.github.winschneid.graphcompare.core.SampleData
 import io.github.winschneid.graphcompare.core.ui.ChartColors
@@ -64,16 +66,33 @@ private val PercentFormatter = CartesianValueFormatter { _, value, _ -> ChartFor
 
 // 軸の範囲と目盛りは自動計算に任せず、3 実装で揃える。Vico では範囲はレイヤー、目盛りは軸に設定する
 private val SalesRange = CartesianLayerRangeProvider.fixed(
-    minY = CombinedAxisSpec.SALES_MIN.toDouble(),
-    maxY = CombinedAxisSpec.SALES_MAX.toDouble(),
+    minY = CombinedChartSpec.SALES_MIN.toDouble(),
+    maxY = CombinedChartSpec.SALES_MAX.toDouble(),
 )
 private val GrowthRange = CartesianLayerRangeProvider.fixed(
-    minY = CombinedAxisSpec.GROWTH_MIN.toDouble(),
-    maxY = CombinedAxisSpec.GROWTH_MAX.toDouble(),
+    minY = CombinedChartSpec.GROWTH_MIN.toDouble(),
+    maxY = CombinedChartSpec.GROWTH_MAX.toDouble(),
 )
-private val SalesItemPlacer = VerticalAxis.ItemPlacer.step({ CombinedAxisSpec.SALES_STEP.toDouble() })
-private val GrowthItemPlacer = VerticalAxis.ItemPlacer.step({ CombinedAxisSpec.GROWTH_STEP.toDouble() })
-private val MonthItemPlacer = HorizontalAxis.ItemPlacer.aligned(spacing = { CombinedAxisSpec.MONTH_LABEL_STEP })
+private val SalesItemPlacer = VerticalAxis.ItemPlacer.step({ CombinedChartSpec.SALES_STEP.toDouble() })
+private val GrowthItemPlacer = VerticalAxis.ItemPlacer.step({ CombinedChartSpec.GROWTH_STEP.toDouble() })
+// Vico は端のラベル（1月・12月）が切れないよう、既定で両端に余白を足す。MPAndroidChart にはないので切る
+private val MonthItemPlacer = HorizontalAxis.ItemPlacer.aligned(
+    spacing = { CombinedChartSpec.MONTH_LABEL_STEP },
+    addExtremeLabelPadding = false,
+)
+
+// 軸の幅は既定ではラベルの長さで決まる。3 実装で描画領域の左右の端を揃えるために固定する
+private val YAxisSize = BaseAxis.Size.Fixed(CombinedChartSpec.Y_AXIS_WIDTH_DP.dp)
+
+// 棒の太さ：MPAndroidChart は「x の 1 区間に対する割合」、Vico は「太さと間隔を dp」で指定する。
+// 同じ割合になるよう、太さ・間隔・折れ線の点の間隔を CombinedChartSpec から決める。
+private val BarThickness = CombinedChartSpec.BAR_THICKNESS_DP.dp
+private val BarSpacing = CombinedChartSpec.BAR_SPACING_DP.dp
+private val XSpacing = BarThickness + BarSpacing
+private val PointSize = 8.dp
+
+// Vico は両端に「棒の太さの半分」しか余白を取らない。MPAndroidChart（両端に半区間）に合わせて間隔の半分を足す
+private val LayerPadding = CartesianLayerPadding(scalableStart = BarSpacing / 2, scalableEnd = BarSpacing / 2)
 
 /**
  * Vico 3.3.1 の複合グラフ。棒（ColumnCartesianLayer）と折れ線（LineCartesianLayer）を
@@ -100,10 +119,12 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
     // 既定の補助線は点線なので、MPAndroidChart に合わせて実線にする
     val gridLine = rememberAxisGuidelineComponent(
         fill = Fill(MaterialTheme.colorScheme.outlineVariant),
-        thickness = CombinedAxisSpec.GRID_LINE_WIDTH_DP.dp,
+        thickness = CombinedChartSpec.GRID_LINE_WIDTH_DP.dp,
         shape = RectangleShape,
     )
-    val legendLabel = rememberTextComponent(style = TextStyle(color = textColor, fontSize = 12.sp))
+    val legendLabel = rememberTextComponent(
+        style = TextStyle(color = textColor, fontSize = CombinedChartSpec.LEGEND_TEXT_SIZE_SP.sp),
+    )
 
     val marker = rememberDefaultCartesianMarker(
         // Vico のマーカーは Canvas に描く TextComponent なので、Composable は置けない
@@ -144,8 +165,9 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
             chart = rememberCartesianChart(
                 rememberColumnCartesianLayer(
                     columnProvider = ColumnCartesianLayer.ColumnProvider.series(
-                        rememberLineComponent(fill = Fill(salesColor), thickness = 16.dp),
+                        rememberLineComponent(fill = Fill(salesColor), thickness = BarThickness),
                     ),
+                    columnCollectionSpacing = BarSpacing,
                     rangeProvider = SalesRange,
                     verticalAxisPosition = Axis.Position.Vertical.Start,
                 ),
@@ -155,10 +177,13 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
                             fill = remember(growthColor) { LineCartesianLayer.LineFill.single(Fill(growthColor)) },
                             stroke = LineCartesianLayer.LineStroke.Continuous(thickness = 2.5.dp),
                             pointProvider = LineCartesianLayer.PointProvider.single(
-                                LineCartesianLayer.Point(rememberShapeComponent(Fill(growthColor), CircleShape), size = 8.dp),
+                                LineCartesianLayer.Point(rememberShapeComponent(Fill(growthColor), CircleShape), size = PointSize),
                             ),
                         ),
                     ),
+                    // 折れ線レイヤーの x 間隔は「点の大きさ + pointSpacing」。棒より広いとそちらに合わせて
+                    // 全体が縮み、棒が細くなるので、棒の x 間隔と同じになるように点の大きさを引く
+                    pointSpacing = XSpacing - PointSize,
                     rangeProvider = GrowthRange,
                     verticalAxisPosition = Axis.Position.Vertical.End,
                 ),
@@ -167,6 +192,7 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
                     valueFormatter = SalesFormatter,
                     guideline = gridLine,
                     itemPlacer = SalesItemPlacer,
+                    size = YAxisSize,
                 ),
                 // 既定では全部の軸が補助線を引くので、MPAndroidChart に合わせて左軸の横線だけ残す
                 endAxis = VerticalAxis.rememberEnd(
@@ -174,6 +200,7 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
                     valueFormatter = PercentFormatter,
                     guideline = null,
                     itemPlacer = GrowthItemPlacer,
+                    size = YAxisSize,
                 ),
                 bottomAxis = HorizontalAxis.rememberBottom(
                     label = axisLabel,
@@ -185,13 +212,19 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
                 markerVisibilityListener = markerListener,
                 // MPAndroidChart と同じく、タップでマーカーを出したままにする（既定は押している間だけ）
                 markerController = CartesianMarkerController.rememberToggleOnTap(),
-                // MPAndroidChart と違い、凡例は既定では出ないので自分で並べる
+                layerPadding = { LayerPadding },
+                // MPAndroidChart と違い、凡例は既定では出ないので自分で並べる。
+                // Vico の凡例は Canvas の左端から並ぶので、y 軸の幅だけずらして描画領域の左端に合わせる。
+                // 並び順も MPAndroidChart（CombinedData の既定で 折れ線 → 棒）に合わせる
                 legend = rememberHorizontalLegend(
                     items = {
-                        add(LegendItem(ShapeComponent(Fill(salesColor), CircleShape), legendLabel, ChartFormat.SALES_LABEL))
-                        add(LegendItem(ShapeComponent(Fill(growthColor), CircleShape), legendLabel, ChartFormat.GROWTH_LABEL))
+                        add(LegendItem(ShapeComponent(Fill(growthColor), RectangleShape), legendLabel, ChartFormat.GROWTH_LABEL))
+                        add(LegendItem(ShapeComponent(Fill(salesColor), RectangleShape), legendLabel, ChartFormat.SALES_LABEL))
                     },
-                    padding = Insets(top = 12.dp),
+                    iconSize = CombinedChartSpec.LEGEND_ICON_SIZE_DP.dp,
+                    iconLabelSpacing = CombinedChartSpec.LEGEND_ICON_LABEL_SPACING_DP.dp,
+                    columnSpacing = CombinedChartSpec.LEGEND_ITEM_SPACING_DP.dp,
+                    padding = Insets(start = CombinedChartSpec.Y_AXIS_WIDTH_DP.dp, top = 4.dp),
                 ),
             ),
             modelProducer = modelProducer,

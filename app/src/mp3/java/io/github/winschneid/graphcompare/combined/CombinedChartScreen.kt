@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.github.mikephil.charting.charts.CombinedChart
+import com.github.mikephil.charting.components.Legend
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.BarData
@@ -28,7 +29,7 @@ import com.github.mikephil.charting.formatter.IAxisValueFormatter
 import com.github.mikephil.charting.highlight.Highlight
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 import io.github.winschneid.graphcompare.core.ChartFormat
-import io.github.winschneid.graphcompare.core.CombinedAxisSpec
+import io.github.winschneid.graphcompare.core.CombinedChartSpec
 import io.github.winschneid.graphcompare.core.CombinedPoint
 import io.github.winschneid.graphcompare.core.SampleData
 import io.github.winschneid.graphcompare.core.ui.ChartColors
@@ -79,7 +80,7 @@ private fun createCombinedChart(
 
     xAxis.apply {
         position = XAxis.XAxisPosition.BOTTOM
-        granularity = CombinedAxisSpec.MONTH_LABEL_STEP.toFloat()
+        granularity = CombinedChartSpec.MONTH_LABEL_STEP.toFloat()
         // 棒の幅の半分だけ両端を広げないと、最初と最後の棒が切れる
         axisMinimum = -0.5f
         axisMaximum = points.size - 0.5f
@@ -88,18 +89,36 @@ private fun createCombinedChart(
     }
     // 軸の範囲と目盛りは自動計算に任せず、3 実装で揃える
     axisLeft.apply {
-        axisMinimum = CombinedAxisSpec.SALES_MIN
-        axisMaximum = CombinedAxisSpec.SALES_MAX
-        setLabelCount(CombinedAxisSpec.LABEL_COUNT, true)
-        gridLineWidth = CombinedAxisSpec.GRID_LINE_WIDTH_DP
+        axisMinimum = CombinedChartSpec.SALES_MIN
+        axisMaximum = CombinedChartSpec.SALES_MAX
+        setLabelCount(CombinedChartSpec.LABEL_COUNT, true)
+        gridLineWidth = CombinedChartSpec.GRID_LINE_WIDTH_DP
+        // 軸の幅は既定ではラベルの長さで決まる。3 実装で描画領域の左右の端を揃えるために固定する
+        minWidth = CombinedChartSpec.Y_AXIS_WIDTH_DP
+        maxWidth = CombinedChartSpec.Y_AXIS_WIDTH_DP
         valueFormatter = IAxisValueFormatter { value, _ -> ChartFormat.sales(value) }
     }
     axisRight.apply {
-        axisMinimum = CombinedAxisSpec.GROWTH_MIN
-        axisMaximum = CombinedAxisSpec.GROWTH_MAX
-        setLabelCount(CombinedAxisSpec.LABEL_COUNT, true)
+        axisMinimum = CombinedChartSpec.GROWTH_MIN
+        axisMaximum = CombinedChartSpec.GROWTH_MAX
+        minWidth = CombinedChartSpec.Y_AXIS_WIDTH_DP
+        maxWidth = CombinedChartSpec.Y_AXIS_WIDTH_DP
+        setLabelCount(CombinedChartSpec.LABEL_COUNT, true)
         setDrawGridLines(false)
         valueFormatter = IAxisValueFormatter { value, _ -> ChartFormat.percent(value) }
+    }
+
+    // 凡例：描画領域の左端から、四角いアイコンと文字を横に並べる（並び順は CombinedData の既定で 折れ線 → 棒）
+    legend.apply {
+        form = Legend.LegendForm.SQUARE
+        formSize = CombinedChartSpec.LEGEND_ICON_SIZE_DP
+        formToTextSpace = CombinedChartSpec.LEGEND_ICON_LABEL_SPACING_DP
+        xEntrySpace = CombinedChartSpec.LEGEND_ITEM_SPACING_DP
+        textSize = CombinedChartSpec.LEGEND_TEXT_SIZE_SP
+        horizontalAlignment = Legend.LegendHorizontalAlignment.LEFT
+        verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
+        orientation = Legend.LegendOrientation.HORIZONTAL
+        xOffset = 0f
     }
 
     marker = CombinedMarkerView(context).also { it.chartView = this }
@@ -109,7 +128,7 @@ private fun createCombinedChart(
     })
 
     data = CombinedData().apply {
-        setData(BarData(salesDataSet(points)).apply { barWidth = 0.6f })
+        setData(BarData(salesDataSet(points)).apply { barWidth = CombinedChartSpec.BAR_WIDTH_RATIO })
         setData(LineData(growthDataSet(points)))
     }
 }
