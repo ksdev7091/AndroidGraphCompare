@@ -22,7 +22,7 @@ Android のグラフライブラリといえば長く MPAndroidChart が定番�
 :::
 
 コードはすべて GitHub に置いています。
-https://github.com/winschneid/AndroidGraphCompare
+https://github.com/ksdev7091/AndroidGraphCompare
 
 ### この記事の対象読者
 
