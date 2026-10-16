@@ -28,6 +28,7 @@ import com.github.mikephil.charting.formatter.IAxisValueFormatter
 import com.github.mikephil.charting.highlight.Highlight
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 import io.github.winschneid.graphcompare.core.ChartFormat
+import io.github.winschneid.graphcompare.core.CombinedAxisSpec
 import io.github.winschneid.graphcompare.core.CombinedPoint
 import io.github.winschneid.graphcompare.core.SampleData
 import io.github.winschneid.graphcompare.core.ui.ChartColors
@@ -41,6 +42,7 @@ import io.github.winschneid.graphcompare.core.ui.CombinedSelectionText
 fun CombinedChartScreen(modifier: Modifier = Modifier) {
     var selected by remember { mutableStateOf<CombinedPoint?>(null) }
     val textColor = MaterialTheme.colorScheme.onSurface.toArgb()
+    val gridColor = MaterialTheme.colorScheme.outlineVariant.toArgb()
 
     Column(modifier) {
         AndroidView(
@@ -53,6 +55,7 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
                 chart.axisLeft.textColor = textColor
                 chart.axisRight.textColor = textColor
                 chart.legend.textColor = textColor
+                chart.axisLeft.gridColor = gridColor
                 chart.invalidate()
             },
             modifier = Modifier
@@ -76,18 +79,25 @@ private fun createCombinedChart(
 
     xAxis.apply {
         position = XAxis.XAxisPosition.BOTTOM
-        granularity = 1f
+        granularity = CombinedAxisSpec.MONTH_LABEL_STEP.toFloat()
         // 棒の幅の半分だけ両端を広げないと、最初と最後の棒が切れる
         axisMinimum = -0.5f
         axisMaximum = points.size - 0.5f
         setDrawGridLines(false)
         valueFormatter = IAxisValueFormatter { value, _ -> ChartFormat.month(value) }
     }
+    // 軸の範囲と目盛りは自動計算に任せず、3 実装で揃える
     axisLeft.apply {
-        axisMinimum = 0f
+        axisMinimum = CombinedAxisSpec.SALES_MIN
+        axisMaximum = CombinedAxisSpec.SALES_MAX
+        setLabelCount(CombinedAxisSpec.LABEL_COUNT, true)
+        gridLineWidth = CombinedAxisSpec.GRID_LINE_WIDTH_DP
         valueFormatter = IAxisValueFormatter { value, _ -> ChartFormat.sales(value) }
     }
     axisRight.apply {
+        axisMinimum = CombinedAxisSpec.GROWTH_MIN
+        axisMaximum = CombinedAxisSpec.GROWTH_MAX
+        setLabelCount(CombinedAxisSpec.LABEL_COUNT, true)
         setDrawGridLines(false)
         valueFormatter = IAxisValueFormatter { value, _ -> ChartFormat.percent(value) }
     }

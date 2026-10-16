@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +24,7 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.compose.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.compose.cartesian.data.columnModel
 import com.patrykandpatrick.vico.compose.cartesian.data.lineModel
@@ -49,6 +51,7 @@ import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import com.patrykandpatrick.vico.compose.common.rememberHorizontalLegend
 import io.github.winschneid.graphcompare.core.ChartFormat
+import io.github.winschneid.graphcompare.core.CombinedAxisSpec
 import io.github.winschneid.graphcompare.core.CombinedPoint
 import io.github.winschneid.graphcompare.core.SampleData
 import io.github.winschneid.graphcompare.core.ui.ChartColors
@@ -58,6 +61,19 @@ import kotlin.math.roundToInt
 private val MonthFormatter = CartesianValueFormatter { _, value, _ -> ChartFormat.month(value) }
 private val SalesFormatter = CartesianValueFormatter { _, value, _ -> ChartFormat.sales(value) }
 private val PercentFormatter = CartesianValueFormatter { _, value, _ -> ChartFormat.percent(value) }
+
+// 軸の範囲と目盛りは自動計算に任せず、3 実装で揃える。Vico では範囲はレイヤー、目盛りは軸に設定する
+private val SalesRange = CartesianLayerRangeProvider.fixed(
+    minY = CombinedAxisSpec.SALES_MIN.toDouble(),
+    maxY = CombinedAxisSpec.SALES_MAX.toDouble(),
+)
+private val GrowthRange = CartesianLayerRangeProvider.fixed(
+    minY = CombinedAxisSpec.GROWTH_MIN.toDouble(),
+    maxY = CombinedAxisSpec.GROWTH_MAX.toDouble(),
+)
+private val SalesItemPlacer = VerticalAxis.ItemPlacer.step({ CombinedAxisSpec.SALES_STEP.toDouble() })
+private val GrowthItemPlacer = VerticalAxis.ItemPlacer.step({ CombinedAxisSpec.GROWTH_STEP.toDouble() })
+private val MonthItemPlacer = HorizontalAxis.ItemPlacer.aligned(spacing = { CombinedAxisSpec.MONTH_LABEL_STEP })
 
 /**
  * Vico 3.3.1 の複合グラフ。棒（ColumnCartesianLayer）と折れ線（LineCartesianLayer）を
@@ -81,6 +97,12 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
     val growthColor = ChartColors.series[1]
     val textColor = MaterialTheme.colorScheme.onSurface
     val axisLabel = rememberAxisLabelComponent(style = TextStyle(color = textColor, fontSize = 10.sp))
+    // 既定の補助線は点線なので、MPAndroidChart に合わせて実線にする
+    val gridLine = rememberAxisGuidelineComponent(
+        fill = Fill(MaterialTheme.colorScheme.outlineVariant),
+        thickness = CombinedAxisSpec.GRID_LINE_WIDTH_DP.dp,
+        shape = RectangleShape,
+    )
     val legendLabel = rememberTextComponent(style = TextStyle(color = textColor, fontSize = 12.sp))
 
     val marker = rememberDefaultCartesianMarker(
@@ -124,6 +146,7 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
                     columnProvider = ColumnCartesianLayer.ColumnProvider.series(
                         rememberLineComponent(fill = Fill(salesColor), thickness = 16.dp),
                     ),
+                    rangeProvider = SalesRange,
                     verticalAxisPosition = Axis.Position.Vertical.Start,
                 ),
                 rememberLineCartesianLayer(
@@ -136,12 +159,28 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
                             ),
                         ),
                     ),
+                    rangeProvider = GrowthRange,
                     verticalAxisPosition = Axis.Position.Vertical.End,
                 ),
-                startAxis = VerticalAxis.rememberStart(label = axisLabel, valueFormatter = SalesFormatter),
+                startAxis = VerticalAxis.rememberStart(
+                    label = axisLabel,
+                    valueFormatter = SalesFormatter,
+                    guideline = gridLine,
+                    itemPlacer = SalesItemPlacer,
+                ),
                 // 既定では全部の軸が補助線を引くので、MPAndroidChart に合わせて左軸の横線だけ残す
-                endAxis = VerticalAxis.rememberEnd(label = axisLabel, valueFormatter = PercentFormatter, guideline = null),
-                bottomAxis = HorizontalAxis.rememberBottom(label = axisLabel, valueFormatter = MonthFormatter, guideline = null),
+                endAxis = VerticalAxis.rememberEnd(
+                    label = axisLabel,
+                    valueFormatter = PercentFormatter,
+                    guideline = null,
+                    itemPlacer = GrowthItemPlacer,
+                ),
+                bottomAxis = HorizontalAxis.rememberBottom(
+                    label = axisLabel,
+                    valueFormatter = MonthFormatter,
+                    guideline = null,
+                    itemPlacer = MonthItemPlacer,
+                ),
                 marker = marker,
                 markerVisibilityListener = markerListener,
                 // MPAndroidChart と同じく、タップでマーカーを出したままにする（既定は押している間だけ）
