@@ -141,6 +141,63 @@
 - 端末によっては（Xiaomi 系など）USB 経由のインストールのたびに端末側で承認が要る。承認されないと
   `INSTALL_FAILED_USER_RESTRICTED` になるが、Gradle は BUILD SUCCESSFUL のまま終わるので、ログを確認する。
 
+## 実装量（コードの行数）
+
+空行・コメント・package・import を除いた行数。`docs/scripts/count_lines.py` で数えた。
+
+| | MPAndroidChart 3.2.0 | MPAndroidChart 4.0.1 | Vico 3.3.1 |
+|---|---:|---:|---:|
+| 円 | 49 | 42 | 76 |
+| 棒 | 64 | 63 | 86 |
+| 折れ線 | 49 | 50 | 58 |
+| 複合 | 86 | 69 | 121 |
+| 大量データ | 38 | 41 | 45 |
+| データ更新 | 48 | 42 | 57 |
+| LazyColumn | 53 | 47 | 60 |
+| 共通のスタイル | 48 | 49 | 39 |
+| XML（マーカー） | 14 | - | - |
+| **合計** | **449** | **403** | **542** |
+
+- **4.0.1 が一番少ない**：Kotlin のプロパティで書けるうえ、マーカーが Composable になって XML と `MarkerView` の継承が要らず、
+  選択も `ChartState` から読めるのでリスナーが要らない。
+- **Vico が一番多い**：見た目を MPAndroidChart に揃えるためのコードが多くを占める。凡例を自分で並べる、両端の余白や棒の間隔を dp で合わせる、
+  円グラフのタップ判定と中央の文字を自前で書く、など。Vico の既定の見た目で良ければ、もっと短くなる。
+- **共通のスタイル**（軸の幅・補助線・凡例の設定）は、Vico が一番少ない。Compose の部品を `remember` で作って渡すだけなので。
+
+## 3.2.0 → 4.0.1 の移行
+
+同じグラフを 3.2.0 と 4.0.1 の両方で書いたので、実際に変わったところを拾った（[公式の移行ガイド](https://philjay.cc/mpandroidchart/docs/migration/)も参照）。
+
+### そのまま使えるもの
+- **パッケージ名・クラス名**：`com.github.mikephil.charting` のまま。import はほぼ書き換え不要
+- **軸のフォーマッタ**：3.2.0 は 3.0.x の `IAxisValueFormatter` に戻っているので、ラムダの書き方は 4.0.1 と同じ
+  （3.1.0 の `ValueFormatter` を継承していた場合は、3.2.0 の時点で書き換えが要る）
+- **データの組み立て方**：`LineDataSet` / `BarData` / `CombinedData` / `groupBars` などの考え方は同じ
+
+### 書き換えが要るもの
+| 3.2.0 | 4.0.1 |
+|---|---|
+| 依存 `com.github.PhilJay:MPAndroidChart:v3.2.0` | `com.github.PhilJay.MPAndroidChart:MPChartLib:v4.0.1`（Compose なら `MPChartCompose` も） |
+| `setDrawGridLines(false)` / `setDrawValues(false)` / `setDrawCircles(false)` | `isDrawGridLinesEnabled = false` / `isDrawValuesEnabled = false` / `isDrawCirclesEnabled = false` |
+| `setCircleColor(c)` / `setHoleColor(c)` / `setCenterTextSize(s)` / `setEntryLabelColor(c)` | `circleColor = c` / `holeColor = c` / `centerTextSize = s` / `entryLabelColor = c` |
+| `setLabelCount(5, true)` | `labelCount = 5` と `isForceLabelsEnabled = true` |
+| `setScaleEnabled(false)` / `setTouchEnabled(false)` / `setUsePercentValues(true)` | `isScaleEnabled = false` / `isTouchEnabled = false` / `isUsePercentValuesEnabled = true` |
+| `highLightColor` / `setDrawHorizontalHighlightIndicator(false)` | `highlightColor` / `isHorizontalHighlightIndicatorEnabled = false` |
+| `drawOrder = arrayOf(...)` / `stackLabels = arrayOf(...)` / `BarEntry(x, floatArrayOf(...))` | 配列がリストに：`listOf(...)` / `BarEntry(x, listOf(...))` |
+| `Entry(x, y, data)`（data は `Object`、取り出すときにキャスト） | `Entry(x, y, data = data)`（`Entry<D>` で型を持てる） |
+| `combinedData.setData(barData)` | `combinedData.barData = barData` |
+
+### 既定値が変わったもの（見た目が変わる）
+- 軸線と補助線の太さ：1dp → 0.5dp
+- 円グラフの選択時にずらす量：18（px のまま）→ 9dp
+
+### Compose で使うなら
+- `AndroidView` の `factory` / `update` が、chart composable の `setup` / `update` になる。中身は同じ View なので、設定の書き方はほぼそのまま
+- 選択はリスナーではなく `rememberChartState()` の `selectedEntry` で読める
+- マーカーは XML レイアウト + `MarkerView` の継承から、Composable のラムダになる
+- 新しいデータを渡すとアニメーションする（`animateChanges = true`、300ms 固定）。3.x にはない
+- 新機能：棒の角丸（`barCornerRadius`）、間引き（`isDecimationEnabled`、大量データで大きく効いた）
+
 ## 計測結果
 
 生の結果は `docs/benchmark-results/<flavor>-benchmarkData.json`。表の値はそこから作った。
