@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,13 +17,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.Axis
-import com.patrykandpatrick.vico.compose.cartesian.axis.BaseAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
-import com.patrykandpatrick.vico.compose.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.compose.cartesian.data.columnModel
 import com.patrykandpatrick.vico.compose.cartesian.data.lineModel
@@ -41,17 +36,20 @@ import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarkerVisibil
 import com.patrykandpatrick.vico.compose.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesianMarker
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
-import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
-import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
-import com.patrykandpatrick.vico.compose.cartesian.Zoom
 import com.patrykandpatrick.vico.compose.common.Fill
 import com.patrykandpatrick.vico.compose.common.Insets
-import com.patrykandpatrick.vico.compose.common.LegendItem
-import com.patrykandpatrick.vico.compose.common.component.ShapeComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
-import com.patrykandpatrick.vico.compose.common.rememberHorizontalLegend
+import io.github.winschneid.graphcompare.common.FixedYAxisSize
+import io.github.winschneid.graphcompare.common.rememberChartAxisLabel
+import io.github.winschneid.graphcompare.common.rememberChartGridLine
+import io.github.winschneid.graphcompare.common.rememberChartLegend
+import io.github.winschneid.graphcompare.common.rememberFitZoomState
+import io.github.winschneid.graphcompare.common.rememberFixedScrollState
+import io.github.winschneid.graphcompare.common.toItemPlacer
+import io.github.winschneid.graphcompare.common.toRangeProvider
+import io.github.winschneid.graphcompare.common.xLabelPlacer
 import io.github.winschneid.graphcompare.core.ChartFormat
 import io.github.winschneid.graphcompare.core.CombinedChartSpec
 import io.github.winschneid.graphcompare.core.CombinedPoint
@@ -64,25 +62,11 @@ private val MonthFormatter = CartesianValueFormatter { _, value, _ -> ChartForma
 private val SalesFormatter = CartesianValueFormatter { _, value, _ -> ChartFormat.sales(value) }
 private val PercentFormatter = CartesianValueFormatter { _, value, _ -> ChartFormat.percent(value) }
 
-// 軸の範囲と目盛りは自動計算に任せず、3 実装で揃える。Vico では範囲はレイヤー、目盛りは軸に設定する
-private val SalesRange = CartesianLayerRangeProvider.fixed(
-    minY = CombinedChartSpec.SALES_MIN.toDouble(),
-    maxY = CombinedChartSpec.SALES_MAX.toDouble(),
-)
-private val GrowthRange = CartesianLayerRangeProvider.fixed(
-    minY = CombinedChartSpec.GROWTH_MIN.toDouble(),
-    maxY = CombinedChartSpec.GROWTH_MAX.toDouble(),
-)
-private val SalesItemPlacer = VerticalAxis.ItemPlacer.step({ CombinedChartSpec.SALES_STEP.toDouble() })
-private val GrowthItemPlacer = VerticalAxis.ItemPlacer.step({ CombinedChartSpec.GROWTH_STEP.toDouble() })
-// Vico は端のラベル（1月・12月）が切れないよう、既定で両端に余白を足す。MPAndroidChart にはないので切る
-private val MonthItemPlacer = HorizontalAxis.ItemPlacer.aligned(
-    spacing = { CombinedChartSpec.MONTH_LABEL_STEP },
-    addExtremeLabelPadding = false,
-)
-
-// 軸の幅は既定ではラベルの長さで決まる。3 実装で描画領域の左右の端を揃えるために固定する
-private val YAxisSize = BaseAxis.Size.Fixed(CombinedChartSpec.Y_AXIS_WIDTH_DP.dp)
+private val SalesRange = CombinedChartSpec.sales.toRangeProvider()
+private val GrowthRange = CombinedChartSpec.growth.toRangeProvider()
+private val SalesItemPlacer = CombinedChartSpec.sales.toItemPlacer()
+private val GrowthItemPlacer = CombinedChartSpec.growth.toItemPlacer()
+private val MonthItemPlacer = xLabelPlacer(CombinedChartSpec.MONTH_LABEL_STEP)
 
 // 棒の太さ：MPAndroidChart は「x の 1 区間に対する割合」、Vico は「太さと間隔を dp」で指定する。
 // 同じ割合になるよう、太さ・間隔・折れ線の点の間隔を CombinedChartSpec から決める。
@@ -114,17 +98,7 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
 
     val salesColor = ChartColors.series[0]
     val growthColor = ChartColors.series[1]
-    val textColor = MaterialTheme.colorScheme.onSurface
-    val axisLabel = rememberAxisLabelComponent(style = TextStyle(color = textColor, fontSize = 10.sp))
-    // 既定の補助線は点線なので、MPAndroidChart に合わせて実線にする
-    val gridLine = rememberAxisGuidelineComponent(
-        fill = Fill(MaterialTheme.colorScheme.outlineVariant),
-        thickness = CombinedChartSpec.GRID_LINE_WIDTH_DP.dp,
-        shape = RectangleShape,
-    )
-    val legendLabel = rememberTextComponent(
-        style = TextStyle(color = textColor, fontSize = CombinedChartSpec.LEGEND_TEXT_SIZE_SP.sp),
-    )
+    val axisLabel = rememberChartAxisLabel()
 
     val marker = rememberDefaultCartesianMarker(
         // Vico のマーカーは Canvas に描く TextComponent なので、Composable は置けない
@@ -190,9 +164,9 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
                 startAxis = VerticalAxis.rememberStart(
                     label = axisLabel,
                     valueFormatter = SalesFormatter,
-                    guideline = gridLine,
+                    guideline = rememberChartGridLine(),
                     itemPlacer = SalesItemPlacer,
-                    size = YAxisSize,
+                    size = FixedYAxisSize,
                 ),
                 // 既定では全部の軸が補助線を引くので、MPAndroidChart に合わせて左軸の横線だけ残す
                 endAxis = VerticalAxis.rememberEnd(
@@ -200,7 +174,7 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
                     valueFormatter = PercentFormatter,
                     guideline = null,
                     itemPlacer = GrowthItemPlacer,
-                    size = YAxisSize,
+                    size = FixedYAxisSize,
                 ),
                 bottomAxis = HorizontalAxis.rememberBottom(
                     label = axisLabel,
@@ -213,29 +187,17 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
                 // MPAndroidChart と同じく、タップでマーカーを出したままにする（既定は押している間だけ）
                 markerController = CartesianMarkerController.rememberToggleOnTap(),
                 layerPadding = { LayerPadding },
-                // MPAndroidChart と違い、凡例は既定では出ないので自分で並べる。
-                // Vico の凡例は Canvas の左端から並ぶので、y 軸の幅だけずらして描画領域の左端に合わせる。
                 // 並び順も MPAndroidChart（CombinedData の既定で 折れ線 → 棒）に合わせる
-                legend = rememberHorizontalLegend(
-                    items = {
-                        add(LegendItem(ShapeComponent(Fill(growthColor), RectangleShape), legendLabel, ChartFormat.GROWTH_LABEL))
-                        add(LegendItem(ShapeComponent(Fill(salesColor), RectangleShape), legendLabel, ChartFormat.SALES_LABEL))
-                    },
-                    iconSize = CombinedChartSpec.LEGEND_ICON_SIZE_DP.dp,
-                    iconLabelSpacing = CombinedChartSpec.LEGEND_ICON_LABEL_SPACING_DP.dp,
-                    columnSpacing = CombinedChartSpec.LEGEND_ITEM_SPACING_DP.dp,
-                    padding = Insets(start = CombinedChartSpec.Y_AXIS_WIDTH_DP.dp, top = 4.dp),
+                legend = rememberChartLegend(
+                    listOf(growthColor to ChartFormat.GROWTH_LABEL, salesColor to ChartFormat.SALES_LABEL),
                 ),
             ),
             modelProducer = modelProducer,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp),
-            // この画面ではタップの比較に絞るため、ズームとスクロールは止める。
-            // Vico は棒の間隔が dp で決まり、既定では画面からはみ出した分をスクロールで見せるので、
-            // 全体が収まる倍率（Zoom.Content）を指定する
-            scrollState = rememberVicoScrollState(scrollEnabled = false),
-            zoomState = rememberVicoZoomState(zoomEnabled = false, initialZoom = Zoom.Content, minZoom = Zoom.Content),
+            scrollState = rememberFixedScrollState(),
+            zoomState = rememberFitZoomState(),
         )
         CombinedSelectionText(selected)
     }

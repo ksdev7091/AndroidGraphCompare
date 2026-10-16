@@ -8,13 +8,19 @@ import kotlin.math.roundToInt
 object ChartFormat {
     const val SALES_LABEL = "売上（左軸）"
     const val GROWTH_LABEL = "前年比（右軸）"
+    val LINE_SERIES_LABELS = listOf("店舗A", "店舗B")
 
     private val integerFormat = NumberFormat.getIntegerInstance(Locale.JAPAN)
 
     /** x 座標（0 始まりの月インデックス）を「1月」のような文字にする。範囲外は空文字。 */
     fun month(x: Number): String = SampleData.months.getOrElse(x.toFloat().roundToInt()) { "" }
 
-    fun sales(value: Number): String = integerFormat.format(value.toFloat().roundToInt())
+    /** x 座標（0 始まりの日インデックス）を「1日」のような文字にする。 */
+    fun day(x: Number): String = "${x.toFloat().roundToInt() + 1}日"
+
+    fun integer(value: Number): String = integerFormat.format(value.toFloat().roundToInt())
+
+    fun sales(value: Number): String = integer(value)
 
     fun percent(value: Number): String = "${value.toFloat().roundToInt()}%"
 

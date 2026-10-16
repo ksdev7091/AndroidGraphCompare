@@ -44,6 +44,20 @@
 - **選択の見せ方**：MPAndroidChart はタップした棒を濃い色にし、マーカーを点の上に出す。
   Vico は縦の点線を引き、マーカーはグラフ上部の決まった位置に出す。
 
-### 計測メモ（途中の値）
+## 折れ線（2 系列、エリア塗り、曲線）
+
+- **エリアのグラデーション**：MPAndroidChart は 3.x も 4.x も `fillDrawable` に `GradientDrawable` を渡す（View の API のまま）。
+  Vico は Compose の `Brush.verticalGradient` を `Fill` にそのまま渡せる。
+- **曲線**：MPAndroidChart の `Mode.CUBIC_BEZIER` に対し、Vico の `Interpolator.cubic()` は点の間で角が残り、直線に近く見えた。
+  点を通るなめらかな曲線になる `Interpolator.catmullRom()` のほうが MPAndroidChart に近い。
+- **右側の余白**：右に軸がないとき、MPAndroidChart は最小余白（`minOffset`、既定 15dp）を取り、Vico は端まで描く。
+  Vico 側に `CartesianLayerPadding(unscalableEnd = 15.dp)` を足して揃えた。
+- **端の x ラベル**：MPAndroidChart は描画領域の左端の「1日」を、左にはみ出して中央揃えで描く。
+  Vico は描けない。ラベルの最大幅が「端までの距離の 2 倍」に制限され、描画領域で切り取られるため。
+  `shiftExtremeLabels`（端のラベルを内側に寄せる）を使うと最後のラベル（26日）の位置まで変わってしまうので、揃えるのはやめた。
+- **選択**：MPAndroidChart は既定でタップした点に十字線を出す（`isHighlightPerTapEnabled = false` で止めた）。
+  Vico はマーカーを渡さなければ何も出ない。
+
+## 計測メモ（途中の値）
 - release APK（R8 あり、複合グラフだけ実装した時点）：土台だけで約 978KB、そこからの増加は 3.2.0 が約 +50KB、4.0.1 が約 +65KB、Vico が約 +98KB。
   全部のグラフを実装してから測り直す。

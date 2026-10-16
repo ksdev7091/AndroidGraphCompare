@@ -15,8 +15,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.github.mikephil.charting.charts.CombinedChart
-import com.github.mikephil.charting.components.Legend
-import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
@@ -28,6 +26,9 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.IAxisValueFormatter
 import com.github.mikephil.charting.highlight.Highlight
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener
+import io.github.winschneid.graphcompare.common.applyChartSpec
+import io.github.winschneid.graphcompare.common.applyRange
+import io.github.winschneid.graphcompare.common.applyThemeColors
 import io.github.winschneid.graphcompare.core.ChartFormat
 import io.github.winschneid.graphcompare.core.CombinedChartSpec
 import io.github.winschneid.graphcompare.core.CombinedPoint
@@ -50,13 +51,8 @@ fun CombinedChartScreen(modifier: Modifier = Modifier) {
             factory = { context ->
                 createCombinedChart(context, SampleData.combined) { selected = it }
             },
-            // テーマ（ライト / ダーク）が変わったら文字色を塗り直す
             update = { chart ->
-                chart.xAxis.textColor = textColor
-                chart.axisLeft.textColor = textColor
-                chart.axisRight.textColor = textColor
-                chart.legend.textColor = textColor
-                chart.axisLeft.gridColor = gridColor
+                chart.applyThemeColors(textColor, gridColor)
                 chart.invalidate()
             },
             modifier = Modifier
@@ -72,54 +68,25 @@ private fun createCombinedChart(
     points: List<CombinedPoint>,
     onSelect: (CombinedPoint?) -> Unit,
 ): CombinedChart = CombinedChart(context).apply {
-    description.isEnabled = false
-    // この画面ではタップの比較に絞るため、ズームとドラッグは止める
-    setScaleEnabled(false)
-    isDragEnabled = false
+    applyChartSpec()
     drawOrder = arrayOf(CombinedChart.DrawOrder.BAR, CombinedChart.DrawOrder.LINE)
 
     xAxis.apply {
-        position = XAxis.XAxisPosition.BOTTOM
         granularity = CombinedChartSpec.MONTH_LABEL_STEP.toFloat()
         // 棒の幅の半分だけ両端を広げないと、最初と最後の棒が切れる
         axisMinimum = -0.5f
         axisMaximum = points.size - 0.5f
-        setDrawGridLines(false)
         valueFormatter = IAxisValueFormatter { value, _ -> ChartFormat.month(value) }
     }
-    // 軸の範囲と目盛りは自動計算に任せず、3 実装で揃える
     axisLeft.apply {
-        axisMinimum = CombinedChartSpec.SALES_MIN
-        axisMaximum = CombinedChartSpec.SALES_MAX
-        setLabelCount(CombinedChartSpec.LABEL_COUNT, true)
-        gridLineWidth = CombinedChartSpec.GRID_LINE_WIDTH_DP
-        // 軸の幅は既定ではラベルの長さで決まる。3 実装で描画領域の左右の端を揃えるために固定する
-        minWidth = CombinedChartSpec.Y_AXIS_WIDTH_DP
-        maxWidth = CombinedChartSpec.Y_AXIS_WIDTH_DP
+        applyRange(CombinedChartSpec.sales)
         valueFormatter = IAxisValueFormatter { value, _ -> ChartFormat.sales(value) }
     }
     axisRight.apply {
-        axisMinimum = CombinedChartSpec.GROWTH_MIN
-        axisMaximum = CombinedChartSpec.GROWTH_MAX
-        minWidth = CombinedChartSpec.Y_AXIS_WIDTH_DP
-        maxWidth = CombinedChartSpec.Y_AXIS_WIDTH_DP
-        setLabelCount(CombinedChartSpec.LABEL_COUNT, true)
-        setDrawGridLines(false)
+        applyRange(CombinedChartSpec.growth)
         valueFormatter = IAxisValueFormatter { value, _ -> ChartFormat.percent(value) }
     }
-
-    // 凡例：描画領域の左端から、四角いアイコンと文字を横に並べる（並び順は CombinedData の既定で 折れ線 → 棒）
-    legend.apply {
-        form = Legend.LegendForm.SQUARE
-        formSize = CombinedChartSpec.LEGEND_ICON_SIZE_DP
-        formToTextSpace = CombinedChartSpec.LEGEND_ICON_LABEL_SPACING_DP
-        xEntrySpace = CombinedChartSpec.LEGEND_ITEM_SPACING_DP
-        textSize = CombinedChartSpec.LEGEND_TEXT_SIZE_SP
-        horizontalAlignment = Legend.LegendHorizontalAlignment.LEFT
-        verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
-        orientation = Legend.LegendOrientation.HORIZONTAL
-        xOffset = 0f
-    }
+    // 凡例の並び順は CombinedData の既定で 折れ線 → 棒 になる
 
     marker = CombinedMarkerView(context).also { it.chartView = this }
     setOnChartValueSelectedListener(object : OnChartValueSelectedListener {
