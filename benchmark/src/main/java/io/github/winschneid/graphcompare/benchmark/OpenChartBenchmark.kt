@@ -4,15 +4,13 @@ import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
-import androidx.test.uiautomator.By
-import androidx.test.uiautomator.Until
 import io.github.winschneid.graphcompare.core.ChartScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-/** 各グラフ画面を Intent で直接開き、表示されるまでの時間とフレーム時間を測る。 */
+/** 各グラフ画面をコールドスタートで直接開き、表示されるまでの時間とフレーム時間を測る。 */
 @RunWith(Parameterized::class)
 class OpenChartBenchmark(private val screen: ChartScreen) {
     @get:Rule
@@ -26,12 +24,7 @@ class OpenChartBenchmark(private val screen: ChartScreen) {
         startupMode = StartupMode.COLD,
     ) {
         pressHome()
-        startActivityAndWait { intent ->
-            intent.putExtra(ChartScreen.EXTRA_SCREEN, screen.route)
-        }
-        check(device.wait(Until.hasObject(By.res(screen.testTag)), 5_000)) {
-            "${screen.testTag} が表示されませんでした"
-        }
+        openScreen(screen)
     }
 
     companion object {

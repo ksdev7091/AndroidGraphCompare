@@ -51,6 +51,7 @@ import io.github.winschneid.graphcompare.common.toItemPlacer
 import io.github.winschneid.graphcompare.common.toRangeProvider
 import io.github.winschneid.graphcompare.common.xLabelPlacer
 import io.github.winschneid.graphcompare.core.ChartFormat
+import io.github.winschneid.graphcompare.core.ChartSpec
 import io.github.winschneid.graphcompare.core.CombinedChartSpec
 import io.github.winschneid.graphcompare.core.CombinedPoint
 import io.github.winschneid.graphcompare.core.SampleData
@@ -70,8 +71,8 @@ private val MonthItemPlacer = xLabelPlacer(CombinedChartSpec.MONTH_LABEL_STEP)
 
 // 棒の太さ：MPAndroidChart は「x の 1 区間に対する割合」、Vico は「太さと間隔を dp」で指定する。
 // 同じ割合になるよう、太さ・間隔・折れ線の点の間隔を CombinedChartSpec から決める。
-private val BarThickness = CombinedChartSpec.BAR_THICKNESS_DP.dp
-private val BarSpacing = CombinedChartSpec.BAR_SPACING_DP.dp
+private val BarThickness = ChartSpec.BAR_THICKNESS_DP.dp
+private val BarSpacing = ChartSpec.BAR_SPACING_DP.dp
 private val XSpacing = BarThickness + BarSpacing
 private val PointSize = 8.dp
 

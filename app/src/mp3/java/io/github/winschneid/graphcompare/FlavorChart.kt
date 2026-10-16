@@ -5,8 +5,10 @@ import androidx.compose.ui.Modifier
 import io.github.winschneid.graphcompare.bar.BarChartScreen
 import io.github.winschneid.graphcompare.combined.CombinedChartScreen
 import io.github.winschneid.graphcompare.core.ChartScreen
-import io.github.winschneid.graphcompare.core.ui.ChartPlaceholder
 import io.github.winschneid.graphcompare.line.LineChartScreen
+import io.github.winschneid.graphcompare.performance.LargeDataScreen
+import io.github.winschneid.graphcompare.performance.LazyListScreen
+import io.github.winschneid.graphcompare.performance.UpdateAnimationScreen
 import io.github.winschneid.graphcompare.pie.PieChartScreen
 
 /** MPAndroidChart 3.2.0（View を AndroidView で包む） による実装。 */
@@ -17,6 +19,8 @@ fun FlavorChart(screen: ChartScreen, modifier: Modifier = Modifier) {
         ChartScreen.Bar -> BarChartScreen(modifier)
         ChartScreen.Line -> LineChartScreen(modifier)
         ChartScreen.Combined -> CombinedChartScreen(modifier)
-        else -> ChartPlaceholder(screen, modifier)
+        ChartScreen.LargeData -> LargeDataScreen(modifier)
+        ChartScreen.Animation -> UpdateAnimationScreen(modifier)
+        ChartScreen.LazyList -> LazyListScreen(modifier)
     }
 }

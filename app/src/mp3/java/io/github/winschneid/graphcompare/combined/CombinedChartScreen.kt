@@ -30,6 +30,7 @@ import io.github.winschneid.graphcompare.common.applyChartSpec
 import io.github.winschneid.graphcompare.common.applyRange
 import io.github.winschneid.graphcompare.common.applyThemeColors
 import io.github.winschneid.graphcompare.core.ChartFormat
+import io.github.winschneid.graphcompare.core.ChartSpec
 import io.github.winschneid.graphcompare.core.CombinedChartSpec
 import io.github.winschneid.graphcompare.core.CombinedPoint
 import io.github.winschneid.graphcompare.core.SampleData
@@ -95,7 +96,7 @@ private fun createCombinedChart(
     })
 
     data = CombinedData().apply {
-        setData(BarData(salesDataSet(points)).apply { barWidth = CombinedChartSpec.BAR_WIDTH_RATIO })
+        setData(BarData(salesDataSet(points)).apply { barWidth = ChartSpec.BAR_WIDTH_RATIO })
         setData(LineData(growthDataSet(points)))
     }
 }

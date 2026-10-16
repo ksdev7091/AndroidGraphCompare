@@ -95,6 +95,45 @@
   選択中は指定する直径をずらす分だけ大きくして揃えた。
 - **凡例**：位置合わせが難しいうえ、項目名をスライスに描けば足りるので、円グラフでは 3 実装とも出さなかった。
 
+## 大量データ（10,000 点、ピンチズームとスクロール）
+
+- **描き方を揃えた条件**：点の印なし、直線でつなぐ（曲線は計算が重く、ライブラリごとの差が性能に混ざる）、x 方向だけズーム。
+- **ズームの有効化**：MPAndroidChart は `isScaleXEnabled` / `isDragEnabled`。Vico は `rememberVicoZoomState` / `rememberVicoScrollState`。
+  Vico は点の間隔を dp で持つので、最初は全体が収まる倍率（`Zoom.Content`）から始める。
+- **4.0.1 の間引き**：`isDecimationEnabled`（同じ画素の列に重なる点を間引く）があるが、既定は off。まず既定のまま比べる。
+- **x 軸のラベル**：MPAndroidChart は 0 / 2,000 / 4,000…ときりのよい値を選ぶ。
+  Vico は拡大率に応じて「重ならない最小の点数おき」に置くので、0 / 1,056 / 2,112…のような半端な値になる。
+
+## データ更新アニメーション（ボタンで 12 か月分を差し替え）
+
+- **前の値から新しい値へ動かせるか**：
+  - 3.2.0：できない。差し替えたあと `animateY` で 0 から伸ばし直す（見た目がまったく違う）
+  - 4.0.1：chart composable に `animateChanges = true` を渡すと、新しいデータを渡すたびに前の値から動く。
+    時間は 300ms 固定（View の `animateDataChange(data, durationMillis)` なら時間を指定できる）
+  - Vico：ModelProducer に新しいデータを流すと自動で動く。`animationSpec` で時間と動き方を指定できる（既定は約 500ms で、だんだん遅くなる動き）
+- 3 実装とも 300ms・等速に揃え、最初の表示ではアニメーションさせないようにした（Vico は `initialAnimationSpec = null`）。
+
+## LazyColumn（30 個の小さな折れ線）
+
+- **行ごとに何が作られるか**：
+  - 3.2.0：`AndroidView` で包んだ `LineChart`（View）。`onReset` を渡さないので、View は使い回されず行ごとに作られる
+  - 4.0.1：chart composable も中身は `AndroidView` で包んだ View で、`onReset` は渡していない。3.2.0 と同じく行ごとに View を作る
+  - Vico：Compose で描くので View は作らない。データを更新しないので、ModelProducer を使わず `CartesianChartModel` を直接渡せる
+- **リストのスクロールとの兼ね合い**：MPAndroidChart はチャートがタッチを受け取るので `isTouchEnabled = false` にした。
+  Vico はマーカーもスクロールも無効にすれば、指の動きはそのままリストに渡る。
+
+## Macrobenchmark のシナリオ
+
+`benchmark` モジュール。flavor ごとに `./gradlew :benchmark:connected<Flavor>BenchmarkAndroidTest` で実行する。
+
+| テスト | 内容 | 指標 |
+|---|---|---|
+| `StartupBenchmark` | グラフ一覧までのコールドスタート | 起動時間 |
+| `OpenChartBenchmark` | 各グラフ画面をコールドスタートで直接開く（7 画面） | 起動時間、フレーム時間 |
+| `LargeDataBenchmark` | ピンチで拡大 → 左右に 2 回ずつスワイプ → ピンチで縮小 | フレーム時間 |
+| `UpdateAnimationBenchmark` | ボタンで 10 回差し替え、毎回アニメーションの終わりまで待つ | フレーム時間 |
+| `LazyListBenchmark` | LazyColumn を下へ 3 回フリック | フレーム時間 |
+
 ## 計測メモ（途中の値）
 - release APK（R8 あり、複合グラフだけ実装した時点）：土台だけで約 978KB、そこからの増加は 3.2.0 が約 +50KB、4.0.1 が約 +65KB、Vico が約 +98KB。
   全部のグラフを実装してから測り直す。

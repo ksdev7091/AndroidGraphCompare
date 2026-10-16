@@ -1,0 +1,19 @@
+package io.github.winschneid.graphcompare.benchmark
+
+import androidx.benchmark.macro.MacrobenchmarkScope
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiObject2
+import androidx.test.uiautomator.Until
+import io.github.winschneid.graphcompare.core.ChartScreen
+
+private const val WAIT_TIMEOUT_MS = 5_000L
+
+/** [screen] を Intent extra で直接開き、グラフが表示されるまで待つ。 */
+fun MacrobenchmarkScope.openScreen(screen: ChartScreen) {
+    startActivityAndWait { intent -> intent.putExtra(ChartScreen.EXTRA_SCREEN, screen.route) }
+    waitForObject(screen.testTag)
+}
+
+/** testTag（resource id として公開している）で要素を探し、出てくるまで待つ。 */
+fun MacrobenchmarkScope.waitForObject(testTag: String): UiObject2 =
+    checkNotNull(device.wait(Until.findObject(By.res(testTag)), WAIT_TIMEOUT_MS)) { "$testTag が表示されませんでした" }

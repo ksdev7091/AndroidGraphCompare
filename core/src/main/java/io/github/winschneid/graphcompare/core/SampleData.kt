@@ -63,6 +63,10 @@ object SampleData {
     fun largeSeries(size: Int = LARGE_SERIES_SIZE): List<Float> =
         randomWalk(size = size, start = 0f, step = 1f, seed = SEED)
 
+    /** LazyColumn に並べる [index] 番目のチャートのデータ（30 点）。軸を揃えるため 10〜70 に収める。 */
+    fun lazyListSeries(index: Int): List<Float> =
+        randomWalk(size = 30, start = 40f, step = 6f, seed = SEED + 100 + index).map { it.coerceIn(10f, 70f) }
+
     /** アニメーション画面で差し替える月別売上。[generation] ごとに値が変わる。 */
     fun monthlySales(generation: Long): List<MonthlySales> {
         val random = Random(generation)
