@@ -65,8 +65,9 @@
 - **右側の余白**：右に軸がないとき、MPAndroidChart は最小余白（`minOffset`、既定 15dp）を取り、Vico は端まで描く。
   Vico 側に `CartesianLayerPadding(unscalableEnd = 15.dp)` を足して揃えた。
 - **端の x ラベル**：MPAndroidChart は描画領域の左端の「1日」を、左にはみ出して中央揃えで描く。
-  Vico は描けない。ラベルの最大幅が「端までの距離の 2 倍」に制限され、描画領域で切り取られるため。
-  `shiftExtremeLabels`（端のラベルを内側に寄せる）を使うと最後のラベル（26日）の位置まで変わってしまうので、揃えるのはやめた。
+  Vico でははみ出して描けない。ラベルの最大幅が「端までの距離の 2 倍」に制限され、描画領域で切り取られるため。
+  3.3.0 で追加された `shiftExtremeLabels`（両端のラベルを描画領域の端に寄せる）も実機で試したが、描画領域の端ちょうどにある値は
+  ラベルの対象から外れる（`HorizontalAxisItemPlacers.kt`）ので「1日」は出なかった。さらに最後のラベル（26日）まで寄せてしまうので、揃えるのはやめた。
 - **選択**：MPAndroidChart は既定でタップした点に十字線を出す（`isHighlightPerTapEnabled = false` で止めた）。
   Vico はマーカーを渡さなければ何も出ない。
 
@@ -86,8 +87,10 @@
     （データが同じだと、transaction を流し直すだけでは足りなかった）
 - **角丸**：
   - 3.2.0：設定がない（角丸にするには `BarChartRenderer` を自作する）
-  - 4.0.1：`barCornerRadius`。グループでは 4 隅とも丸め、積み上げでは一番上の区画の上側だけを丸める
-  - Vico：棒の形を Compose の `Shape` で渡す。区画ごとに形を当てるので、そのままだと積み上げの途中の区画まで丸くなる。
+  - 4.0.1：`barCornerRadius`。グループでは 4 隅とも丸め、積み上げでは一番上の区画の上側だけを丸める（`BarChartRenderer.barCorners`）。
+    `isStackSectionsRounded = true` にすると区画ごとに 4 隅を丸める
+  - Vico：棒の形を Compose の `Shape` で渡す。区画ごとに形を当てるので、そのままだと積み上げの途中の区画まで丸くなる
+    （4.0.1 の `isStackSectionsRounded` に近い動きが既定）。
     4.0.1 に合わせ、表示方法と系列ごとに形を変えた
 - **太さと間隔**：複合グラフと同じく、MPAndroidChart は x の 1 区間に対する割合、Vico は dp。
   1 区間を 64dp とみなして換算し、全体が収まる倍率に任せた。
@@ -95,7 +98,7 @@
 ## 円（ドーナツ、中央の文字、割合、タップで強調）
 
 - **機能の有無**：中央の文字・割合の計算・タップでのスライスの強調は、MPAndroidChart では設定だけでできる。
-  Vico（3.x で PieChart を追加）には中央の文字もタップ判定もない。
+  Vico（PieChart は 3.1.0 で追加。ガイドとリリースノートで experimental とされている）には中央の文字もタップ判定もない。
   - 中央の文字：`PieChartHost` の上に Compose の `Text` を重ねた（Compose なので簡単）
   - タップ：`pointerInput` でタップ位置の角度と中心からの距離を求め、どのスライスかを自前で計算した（`PieChartSpec.sliceIndexAt`）。
     選んだスライスは `Slice.offsetFromCenter` で外へずらす。もう一度タップすると外す、穴の中や円の外で外す、も MPAndroidChart に合わせて自前で書いた
@@ -182,7 +185,7 @@
 
 ### そのまま使えるもの
 - **パッケージ名・クラス名**：`com.github.mikephil.charting` のまま。import はほぼ書き換え不要
-- **軸のフォーマッタ**：3.2.0 は 3.0.x の `IAxisValueFormatter` に戻っているので、ラムダの書き方は 4.0.1 と同じ
+- **フォーマッタ**：3.2.0 は 3.0.x と同じ形（値は `IValueFormatter`、軸は `IAxisValueFormatter`）に戻っているので、ラムダの書き方は 4.0.1 と同じ
   （3.1.0 の `ValueFormatter` を継承していた場合は、3.2.0 の時点で書き換えが要る）
 - **データの組み立て方**：`LineDataSet` / `BarData` / `CombinedData` / `groupBars` などの考え方は同じ
 
@@ -200,7 +203,8 @@
 | `combinedData.setData(barData)` | `combinedData.barData = barData` |
 
 ### 既定値が変わったもの（見た目が変わる）
-- 軸線と補助線の太さ：1dp → 0.5dp
+- 軸線と補助線の太さ：1px → 0.5dp。3.x の既定値 `1f` は px のまま持っていて、dp への換算はセッターを呼んだときだけ（`AxisBase.java`）。
+  4.x は dp で持ち、描画時に換算する。3 倍密度の端末なら 4.x のほうが太く描かれる計算
 - 円グラフの選択時にずらす量：18（px のまま）→ 9dp
 
 ### Compose で使うなら
